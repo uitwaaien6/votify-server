@@ -11,7 +11,8 @@ const {
     SESSION_SECRET = 'session_secret',
     SESSION_LIFETIME = EIGHT_HOURS,
     SESSION_NAME = 'usess',
-    DB_PASSWORD
+    DB_PASSWORD,
+    EMAIL_PASSWORD
 } = process.env;
 
 module.exports = {
@@ -20,5 +21,6 @@ module.exports = {
     SESSION_SECRET,
     SESSION_LIFETIME,
     SESSION_NAME,
-    DB_PASSWORD
+    DB_PASSWORD,
+    EMAIL_PASSWORD
 }

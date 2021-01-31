@@ -2,16 +2,6 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const userSchema = mongoose.Schema({
-    first_name: {
-        type: String,
-        default: '',
-        required: true
-    },
-    last_name: {
-        type: String,
-        default: '',
-        required: true
-    },
     user_name: {
         type: String,
         required: true,
@@ -56,7 +46,7 @@ const userSchema = mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['admin', 'user'],
+        enum: ['admin', 'executive', 'user'],
         default: 'user'
     },
     isAdmin: {
@@ -65,7 +55,7 @@ const userSchema = mongoose.Schema({
     },
     permission: {
         type: Number,
-        default: 2
+        default: 3
     },
     created_at: {
         type: Date,
@@ -80,8 +70,6 @@ const userSchema = mongoose.Schema({
 
 // SAVE USERS PASSWORD WITH BCRYPT SALT
 userSchema.pre('save', function(next) {
-    
-    console.log(` DEBUG: ~ Showing this from userSchema.pre : ${this}`);
 
     if (!this.isModified('password')) {
         return next();
@@ -98,6 +86,7 @@ userSchema.pre('save', function(next) {
             }
 
             this.password = hash;
+            this.updated_at = Date.now();
             next();
         });
     });
