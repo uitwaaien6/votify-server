@@ -15,7 +15,8 @@ const Session = mongoose.model('Session');
 const roles = require('../../_config/roles');
 
 // MIDDLEWARES
-const { isAuthenticated } = require('../middlewares/isAuthenticated');
+const { authenticated } = require('../middlewares/authenticated');
+const { admin } = require('../middlewares/admin');
 
 // VALIDATORS
 const validator = require('../validators/validator'); // general validator
@@ -79,11 +80,14 @@ router.post('/register', async (request, response) => {
 // #route:  POST /register-user
 // #desc:   User sends a request to admin to be registered
 // #access: Private
-router.get('/register-user', (request, response) => {
+router.get('/register-user', admin, async (request, response) => {
 
     try {
-        console.log(request.session);
-        response.send('');
+        const { uuid } = request.session;
+
+        const user = await User.findOne({ uuid });
+
+        response.send(`Your are ${user.role}`);
     } catch (error) {
         console.log(error.message);
         return response.status(422).send({ error: error.message });
@@ -94,12 +98,14 @@ router.get('/register-user', (request, response) => {
 // #route:  POST /register-user
 // #desc:   User sends a request to admin to be registered
 // #access: Private
-router.post('/register-user', (request, response) => {
+router.post('/register-user', admin, async (request, response) => {
 
     try {
-        console.log(request.session);
+        const { uuid } = request.session;
 
-        response.send(request.session);
+        const user = await User.findOne({ uuid });
+
+        response.send(`Your are ${user.role}`);
     } catch (error) {
         console.log(error.message);
         return response.status(422).send({ error: error.message });
@@ -155,9 +161,23 @@ router.post('/login', async (request, response) => {
 
 });
 
-// #route:  POST /register
-// #desc:   User sends a request to admin to be registered
+// #route:  GET /logout
+// #desc:   User logsout
 // #access: Public
+router.get('/logout', async (request, response) => {
+
+    try {
+        request.session.destroy();
+        response.json({ success: true });
+    } catch (error) {
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
+// #route:  POST /register/verification/verify-email/:userId/:emailVerificationToken
+// #desc:   User sends a get request to a special route to verify their email
+// #access: Private
 router.get('/register/verification/verify-email/:userId/:emailVerificationToken', async (request, response) => {
 
     try {

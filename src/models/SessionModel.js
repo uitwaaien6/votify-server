@@ -8,8 +8,7 @@ const times = require('../../_config/times');
 const sessionSchema = mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        ref: 'User'
     },
     uuid: {
         type: String,

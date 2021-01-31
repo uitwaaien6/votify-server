@@ -2,14 +2,19 @@
 
 // NODE MODULES
 require('dotenv').config();
-require('./models/UserModel');
-require('./models/SessionModel');
 const express = require('express');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 
 // APPLICATION
 const app = express();
+
+// MODELS
+require('./models/UserModel');
+require('./models/SessionModel');
+
+// ROUTES
+const authRoutes = require('./routes/authRoutes');
 
 // CONFIG
 require('../_config/dbConnection');
@@ -20,9 +25,6 @@ const {
     SESSION_LIFETIME,
     SESSION_NAME,
 } = require('../_config/environment');
-
-// ROUTES
-const authRoutes = require('./routes/authRoutes');
 
 // NODE ENVIRONMENT CONFIG
 const IN_PROD = NODE_ENV === 'production';
@@ -46,7 +48,6 @@ app.use(
     })
 );
 
-// ROUTERS
 app.use(authRoutes);
 
 // LISTEN
