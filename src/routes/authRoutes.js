@@ -142,7 +142,7 @@ router.post('/login', async (request, response) => {
 
         user.uuid = sessionUUID;
 
-        const session = new Session({ uuid: sessionUUID, expires_at: Date.now() + times.ONE_HOUR * 3 });
+        const session = new Session({ userId: user._id, uuid: sessionUUID, expires_at: Date.now() + times.ONE_HOUR * 3 });
 
         await user.save();
         await session.save();
