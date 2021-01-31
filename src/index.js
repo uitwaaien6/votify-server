@@ -3,10 +3,12 @@
 // NODE MODULES
 require('dotenv').config();
 require('./models/UserModel');
+require('./models/SessionModel');
 const express = require('express');
-const session = require('express-session');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 
+// APPLICATION
 const app = express();
 
 // CONFIG

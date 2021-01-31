@@ -9,18 +9,25 @@ const router = express.Router();
 
 // MODELS
 const User = mongoose.model('User');
+const Session = mongoose.model('Session');
+
+// ROLES
+const roles = require('../../_config/roles');
+
+// MIDDLEWARES
+const { isAuthenticated } = require('../middlewares/isAuthenticated');
 
 // VALIDATORS
 const validator = require('../validators/validator'); // general validator
 
 // CONFIG > EXPIRATION DATES
-const expDates = require('../../_config/expirationDates');
+const times = require('../../_config/times');
 
 // MAILERS
 const { sendVerificationMail } = require('../mailers/sendEmail');
 
 // #route:  POST /register
-// #desc:   User sends a request to admin to be registered
+// #desc:   User register itself
 // #access: Public
 router.post('/register', async (request, response) => {
 
@@ -40,7 +47,7 @@ router.post('/register', async (request, response) => {
         }
 
         const email_verification_token = srs({ length: 128 });
-        const email_verification_token_expiration_date = Date.now() + expDates.ONE_HOUR;
+        const email_verification_token_expiration_date = Date.now() + times.ONE_HOUR;
 
         const user = new User({ 
             user_name, 
@@ -69,6 +76,37 @@ router.post('/register', async (request, response) => {
 
 });
 
+// #route:  POST /register-user
+// #desc:   User sends a request to admin to be registered
+// #access: Private
+router.get('/register-user', (request, response) => {
+
+    try {
+        console.log(request.session);
+        response.send('');
+    } catch (error) {
+        console.log(error.message);
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
+// #route:  POST /register-user
+// #desc:   User sends a request to admin to be registered
+// #access: Private
+router.post('/register-user', (request, response) => {
+
+    try {
+        console.log(request.session);
+
+        response.send(request.session);
+    } catch (error) {
+        console.log(error.message);
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
 // #route:  POST /login
 // #desc:   User sends a request to admin to be registered
 // #access: Public
@@ -88,7 +126,28 @@ router.post('/login', async (request, response) => {
             return response.status(422).send({ error: 'User with the given email doesnt exist' });
         }
 
-        response.json(user._id);
+        if (!user.email_verified) {
+            return response.status(422).send({ error: 'You must verify your account' });
+        }
+
+        const isMatch = await user.comparePassword(password);
+
+        if (!isMatch) {
+            return response.status(422).send({ error: 'Email or Password is wrong' });
+        }
+
+        sessionUUID = uuid.v4();
+
+        request.session.uuid = sessionUUID;
+
+        user.uuid = sessionUUID;
+
+        const session = new Session({ uuid: sessionUUID, expires_at: Date.now() + times.ONE_HOUR * 3 });
+
+        await user.save();
+        await session.save();
+
+        response.json({ success: true });
 
     } catch (error) {
         return response.status(422).send({ error: error.message });
@@ -115,11 +174,11 @@ router.get('/register/verification/verify-email/:userId/:emailVerificationToken'
         }
         
         if (Date.now() > user.email_verification_token_expiration_date) {
-            return response.status(422).send({ error: 'Something went wront' });
+            return response.status(422).send({ error: 'Something went wrong' });
         }
 
         if (user.email_verification_token !== emailVerificationToken) {
-            return response.status(422).send({ error: 'Something Went Wront' });
+            return response.status(422).send({ error: 'Something went wrong' });
         }
 
         user.email_verified = true;
@@ -135,7 +194,5 @@ router.get('/register/verification/verify-email/:userId/:emailVerificationToken'
     }
 
 });
-
-router.post('/register-user')
 
 module.exports = router;

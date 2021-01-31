@@ -53,6 +53,10 @@ const userSchema = mongoose.Schema({
         type: Boolean,
         default: false
     },
+    isVoted: {
+        type: Boolean,
+        default: false
+    },
     permission: {
         type: Number,
         default: 3

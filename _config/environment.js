@@ -1,9 +1,9 @@
 
 // CONFIG
-const expDates = require('./expirationDates');
+const times = require('./times');
 
 // TIMES
-const EIGHT_HOURS = expDates.ONE_HOUR * 8;
+const EIGHT_HOURS = times.ONE_HOUR * 8;
 
 const {
     PORT = 3000,
