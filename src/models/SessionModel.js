@@ -3,10 +3,10 @@
 const mongoose = require('mongoose');
 
 // CONFIG
-const times = require('../../_config/times');
+const times = require('../../_config/times'); // in milliseconds
 
 const sessionSchema = mongoose.Schema({
-    userId: {
+    user_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
@@ -15,28 +15,19 @@ const sessionSchema = mongoose.Schema({
         required: true,
         unique: true
     },
-    created_at: {
+    createdAt: {
         type: Date,
-        default: Date.now()
-    },
-    updated_at: {
-        type: Date,
-        default: Date.now()
-    },
-    expires_at: {
-        type: Date,
-        default: (Date.now() + times.ONE_HOUR * 3),
-        required: true
+        expires: times.ONE_HOUR_IN_SECONDS * 3
     }
 });
 
 sessionSchema.pre('save', function(next) {
     try {
-        this.expires_at = (Date.now() + times.ONE_HOUR * 3)
+        this.updatedAt = Date.now();
         next();
     } catch (error) {
         console.log(error.message);
     }
-})
+});
 
 mongoose.model('Session', sessionSchema);

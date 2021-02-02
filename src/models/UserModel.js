@@ -1,5 +1,10 @@
+
+// NODE MODULES
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+
+// ROLES
+const roles = require('../../_config/roles');
 
 const userSchema = mongoose.Schema({
     user_name: {
@@ -46,30 +51,22 @@ const userSchema = mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['admin', 'executive', 'user'],
-        default: 'user'
+        enum: [roles.ADMIN, roles.EXECUTIVE, roles.USER],
+        default: roles.USER
     },
-    isAdmin: {
+    is_admin: {
         type: Boolean,
         default: false
     },
-    isVoted: {
+    is_voted: {
         type: Boolean,
         default: false
     },
     permission: {
         type: Number,
         default: 3
-    },
-    created_at: {
-        type: Date,
-        default: Date.now()
-    },
-    updated_at: {
-        type: Date,
-        default: Date.now()
     }
-});
+}, { timestamps: true });
 
 
 // SAVE USERS PASSWORD WITH BCRYPT SALT
@@ -98,8 +95,6 @@ userSchema.pre('save', function(next) {
 
 userSchema.methods.comparePassword = function(usersPlainPassword) {
 
-    console.log(` DEBUG: ~ Showing this from userSchema.methods.comparePassword : ${this}`);
-
     return new Promise((resolve, reject) => {
         bcrypt.compare(usersPlainPassword, this.password, (err, isMatch) => {
             if (err) {
@@ -116,5 +111,7 @@ userSchema.methods.comparePassword = function(usersPlainPassword) {
         });
     });
 }
+
+module.exports = userSchema;
 
 mongoose.model('User', userSchema);

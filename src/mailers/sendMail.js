@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 // CONFIG > ENVIRONMENT
 const { EMAIL_PASSWORD } = require('../../_config/environment');
 
-async function sendVerificationMail(package) {
+async function sendMail(package) {
 
 
     try {
@@ -30,5 +30,5 @@ async function sendVerificationMail(package) {
 }
 
 module.exports = {
-    sendVerificationMail
+    sendMail
 }

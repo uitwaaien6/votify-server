@@ -12,6 +12,7 @@ const app = express();
 // MODELS
 require('./models/UserModel');
 require('./models/SessionModel');
+require('./models/VoteModel');
 
 // ROUTES
 const authRoutes = require('./routes/authRoutes');

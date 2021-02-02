@@ -11,9 +11,6 @@ const router = express.Router();
 const User = mongoose.model('User');
 const Session = mongoose.model('Session');
 
-// ROLES
-const roles = require('../../_config/roles');
-
 // MIDDLEWARES
 const { authenticated } = require('../middlewares/authenticated');
 const { admin } = require('../middlewares/admin');
@@ -24,8 +21,13 @@ const validator = require('../validators/validator'); // general validator
 // CONFIG > EXPIRATION DATES
 const times = require('../../_config/times');
 
+// CONFIG > ROLES
+const roles = require('../../_config/roles');
+
 // MAILERS
-const { sendVerificationMail } = require('../mailers/sendEmail');
+const { sendMail } = require('../mailers/sendMail');
+
+// ========= PUBLIC ROUTES =============
 
 // #route:  POST /register
 // #desc:   User register itself
@@ -33,14 +35,22 @@ const { sendVerificationMail } = require('../mailers/sendEmail');
 router.post('/register', async (request, response) => {
 
     try {
-        const { user_name, email, password } = request.body;
+        const { user_name, email, password, passwordVerification } = request.body;
 
-        if (!user_name || !email || !password) {
+        if (!user_name || !email || !password || !passwordVerification) {
             return response.status(422).send({ error: 'user name or email or password is not provided' });
         }
 
         if (!validator.validateEmail(email)) {
             return response.status(422).send({ error: 'Email is not valid' });
+        }
+
+        if (!validator.validatePassword(password)) {
+            return response.status(422).send({ error: 'password is invalid, please choose proper password' });
+        }
+
+        if (password !== passwordVerification) {
+            return response.status(422).send({ error: 'password you entered is not matched' });
         }
 
         if (user_name.includes(' ')) {
@@ -65,49 +75,13 @@ router.post('/register', async (request, response) => {
             to: email,
             subject: 'ESN VOTING EMAIL VERIFICATION LINK',
             text: `UserName: ${user.user_name}`,
-            html: `<a href="http://localhost:3000/register/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
+            html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
         }
 
-        sendVerificationMail(emailPackage);
+        sendMail(emailPackage);
 
         response.send('Verification link has been sent to user');
     } catch (error) {
-        return response.status(422).send({ error: error.message });
-    }
-
-});
-
-// #route:  POST /register-user
-// #desc:   User sends a request to admin to be registered
-// #access: Private
-router.get('/register-user', admin, async (request, response) => {
-
-    try {
-        const { uuid } = request.session;
-
-        const user = await User.findOne({ uuid });
-
-        response.send(`Your are ${user.role}`);
-    } catch (error) {
-        console.log(error.message);
-        return response.status(422).send({ error: error.message });
-    }
-
-});
-
-// #route:  POST /register-user
-// #desc:   User sends a request to admin to be registered
-// #access: Private
-router.post('/register-user', admin, async (request, response) => {
-
-    try {
-        const { uuid } = request.session;
-
-        const user = await User.findOne({ uuid });
-
-        response.send(`Your are ${user.role}`);
-    } catch (error) {
-        console.log(error.message);
         return response.status(422).send({ error: error.message });
     }
 
@@ -129,34 +103,30 @@ router.post('/login', async (request, response) => {
         const user = await User.findOne({ email });
 
         if (!user) {
-            return response.status(422).send({ error: 'User with the given email doesnt exist' });
+            return response.status(422).json({ error: 'User with the given email doesnt exist' });
         }
 
         if (!user.email_verified) {
-            return response.status(422).send({ error: 'You must verify your account' });
+            return response.status(422).json({ error: 'You must verify your account' });
         }
 
-        const isMatch = await user.comparePassword(password);
+        await user.comparePassword(password);
 
-        if (!isMatch) {
-            return response.status(422).send({ error: 'Email or Password is wrong' });
-        }
+        //if (!isMatch) {
+            //return response.status(422).json({ error: 'Email or Password is wrong' });
+        //}
 
         sessionUUID = uuid.v4();
-
         request.session.uuid = sessionUUID;
-
         user.uuid = sessionUUID;
+        const session = new Session({ user_id: user._id, uuid: sessionUUID });
+        await Promise.all([user.save(), session.save()]);
 
-        const session = new Session({ userId: user._id, uuid: sessionUUID, expires_at: Date.now() + times.ONE_HOUR * 3 });
-
-        await user.save();
-        await session.save();
-
-        response.json({ success: true });
+        response.json({ success: true, msg: 'Successfully logged in' });
 
     } catch (error) {
-        return response.status(422).send({ error: error.message });
+        console.log('Error in Login', error);
+        return response.status(422).json({ error: error.message });
     }
 
 });
@@ -167,6 +137,23 @@ router.post('/login', async (request, response) => {
 router.get('/logout', async (request, response) => {
 
     try {
+
+        const { uuid } = request.session;
+        console.log(request.session);
+
+        const user = await User.findOne({ uuid });
+
+        if (!user) {
+            return response.status(422).send({ error: 'User with the given uuid doesnt exist' });
+        }
+
+        user.uuid = null;
+        //await user.save();
+
+        //await Session.deleteOne({ userId: user._id });
+
+        await Promise.all([user.save(), Session.deleteOne({ user_id: user._id })]);
+
         request.session.destroy();
         response.json({ success: true });
     } catch (error) {
@@ -175,10 +162,93 @@ router.get('/logout', async (request, response) => {
 
 });
 
+
+// #route:  POST /api/auth/verification/password-reset/generate-code
+// #desc:   Generate password reset code for the user and send it through email
+// #access: Public
+router.post('/password-reset/send-link', async (request, response) => {
+
+    try {
+        const { email } = request.body;
+        const user = await User.findOne({ email });
+    
+        if (!user) {
+            return response.status(422).send({ error: 'User with given email is not found' });
+        }
+
+        const password_reset_token = srs({ length: 128 });
+        const password_reset_token_expiration_date = Date.now() + times.ONE_MIN * 30;
+    
+        user.password_reset_token = password_reset_token;
+        user.password_reset_token_expiration_date = password_reset_token_expiration_date
+
+        await user.save();
+
+        const emailPackage = {
+            from: 'no-reply@voteapp.com',
+            to: email,
+            subject: 'ESN VOTING PASSWORD RESET LINK',
+            text: `Change your password for this User Name By Clicking the Button Below: ${user.user_name}`,
+            html: `<a href="http://localhost:3000/api/auth/verification/password-reset/reset-password/${user._id}/${password_reset_token}">Change Your Password</a>`
+        }
+
+        sendMail(emailPackage);
+
+        response.json({ success: true, msg: 'Password reset link has been successfully sent to your email address', _info: `api/auth/verification/password-reset/reset-password/${user._id}/${password_reset_token}` }); // TODO DELETE INFO PROP
+    
+    } catch (error) {
+        console.log(error.message);
+        return response.statue(422).send({ error: error.message });
+    }
+
+});
+
+
+// ======== PRIVATE ROUTE =======
+
+
+// #route:  POST /register-user
+// #desc:   User sends a request to admin to be registered
+// #access: Private
+router.get('/register-user', admin, async (request, response) => {
+
+    try {
+        const { uuid } = request.session;
+
+        const user = await User.findOne({ uuid });
+
+        if (!user) {
+            return response.status(422).send({ error: 'user with the given uuid is doesnt exist in /register-user' });
+        }
+
+        response.send(`Your are ${user.role}`);
+    } catch (error) {
+        console.log(error.message);
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
+// #route:  POST /register-user
+// #desc:   User sends a request to admin to be registered
+// #access: Private
+router.post('/register-user', admin, async (request, response) => {
+
+    try {
+        const { uuid } = request.session;
+        const user = await User.findOne({ uuid });
+        response.send(`Your are ${user.role}`);
+    } catch (error) {
+        console.log(error.message);
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
 // #route:  POST /register/verification/verify-email/:userId/:emailVerificationToken
 // #desc:   User sends a get request to a special route to verify their email
 // #access: Private
-router.get('/register/verification/verify-email/:userId/:emailVerificationToken', async (request, response) => {
+router.get('/api/auth/verification/verify-email/:userId/:emailVerificationToken', async (request, response) => {
 
     try {
         const { userId, emailVerificationToken } = request.params;
@@ -202,14 +272,91 @@ router.get('/register/verification/verify-email/:userId/:emailVerificationToken'
         }
 
         user.email_verified = true;
-        user.email_verification_token = null;
-        user.email_verification_token_expiration_date = null;
+        user.email_verification_token = undefined;
+        user.email_verification_token_expiration_date = undefined;
 
         // save user to the database
         await user.save();
 
         response.send(`email with the given user id has been verified ${user._id}`);
     } catch (error) {
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
+// #route:  GET /api/auth/verification/password-reset/reset-password/:userId/:passwordResetToken
+// #desc:   Send Proper html files for user to be able to send their new password
+// #access: Private
+router.get('/api/auth/verification/password-reset/reset-password/:userId/:passwordResetToken', async (request, response) => {
+
+    try {
+
+        response.send('you can create your new password');
+    
+    } catch (error) {
+        console.log(error.message);
+        return response.statue(422).send({ error: error.message });
+    }
+
+});
+
+// #route:  POST /api/auth/verification/password-reset/reset-password/:userId/:passwordResetToken
+// #desc:   Take new password from user that they send from the secret rout
+// #access: Private
+router.post('/api/auth/verification/password-reset/reset-password/:userId/:passwordResetToken', async (request, response) => {
+
+    try {
+
+        const { password, passwordVerification } = request.body;
+
+        const { userId, passwordResetToken } = request.params;
+
+        const user = await User.findOne({ _id: userId });
+
+        if (!user) {
+            return response.status(422).send({ error: 'User with the given id doesnt exist' });
+        }
+
+        if (user.password_reset_token !== passwordResetToken) {
+            return response.status(422).send({ error: 'password reset token authentication failed' });
+        }
+
+        if (Date.now() > user.password_reset_token_expiration_date) {
+            return response.status(422).send({ error: 'password reset token expiration date has passed' });
+        }
+
+        if (!password || !passwordVerification) {
+            return response.status(422).send({ error: 'password are not provided' });
+        }
+
+        if (password !== passwordVerification) {
+            return response.status(422).send({ error: 'passwords doesnt match' });
+        }
+
+        if (!validator.validatePassword(password)) {
+            return response.status(422).send({ error: 'password you provided is invalid' });
+        }
+
+        user.password = password;
+        user.password_reset_token = undefined;
+        user.password_reset_token_expiration_date = undefined;
+
+        await user.save();
+
+        const emailPackage = {
+            from: 'no-reply@voteapp.com',
+            to: user.email,
+            subject: 'ESN VOTING PASSWORD HAS CHANGED',
+            text: `${user.user_name}, this users password has been changed.`
+        }
+
+        sendMail(emailPackage);
+
+        response.json({ success: true, msg: 'Password has been successfully changed' });
+    
+    } catch (error) {
+        console.log(error.message);
         return response.status(422).send({ error: error.message });
     }
 

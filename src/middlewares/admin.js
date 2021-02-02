@@ -2,6 +2,7 @@
 // NODE MODULES
 const uuid = require('uuid');
 const mongoose = require('mongoose');
+const chalk = require('chalk');
 
 // MODELS
 const User = mongoose.model('User');
@@ -29,14 +30,14 @@ async function admin(request, response, next) {
             return response.status(422).send({ error: 'User with this uuid doesnt exist' });
         }
 
-        if (user.role !== roles.ADMIN || !user.isAdmin || user.permission !== 1) {
+        if (user.role !== roles.ADMIN || !user.is_admin || user.permission !== 1) {
             return response.status(401).send({ error: 'user with the given uuid is not admin' });
         }
 
-        return next();
+        next();
 
     } catch (error) {
-        console.log(error.message);
+        console.log(chalk.red(' ! Error in admin middleware'));
         return response.status(422).send({ error: error.message });
     }
 }
