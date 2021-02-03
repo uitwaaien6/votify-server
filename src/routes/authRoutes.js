@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const srs = require('secure-random-string');
 const uuid = require('uuid');
 
+// ROUTER
 const router = express.Router();
 
 // MODELS
@@ -243,15 +244,15 @@ router.post('/password-reset/send-link', async (request, response) => {
 router.get('/register-user', admin, async (request, response) => {
 
     try {
-        const { uuid } = request.session;
 
+        const { uuid } = request.session;
         const user = await User.findOne({ uuid });
 
         if (!user) {
             return response.status(422).send({ error: 'user with the given uuid is doesnt exist in /register-user' });
         }
 
-        response.send(`Your are ${user.role}`);
+        return response.json({ success: true, msg: 'Register user page' });
     } catch (error) {
         console.log(error.message);
         return response.status(422).send({ error: error.message });

@@ -8,13 +8,11 @@ const voterSchema = mongoose.Schema({
     },
     user_name: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     email: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     is_voted: {
         type: Boolean,
@@ -35,7 +33,7 @@ const voteSchema = mongoose.Schema({
     },
     options: {
         type: Array,
-        default: [],
+        default: ['cekimser'],
         required: true
     },
     votes: {

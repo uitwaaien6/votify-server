@@ -45,15 +45,16 @@ router.post('/start-vote', admin, async (request, response) => {
     try {
         
         const { title, options } = request.body;
+        let defaultOptions = ['evet', 'hayir', 'cekimser'];
 
-        if (!title || !options || title === ' ' || options.length <= 1) {
-            response.status(422).send({ error: 'Title or options are not provided' });
+        if (!title || title === ' ') {
+            response.status(422).json({ error: 'Title or options are not provided' });
         }
 
         const vote = new Vote({
             user_id: request.user._id,
             title,
-            options
+            options: !options || options.length === 0 ? defaultOptions : options.concat('cekimser')
         });
 
         await vote.save();
