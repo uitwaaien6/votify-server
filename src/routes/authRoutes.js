@@ -12,8 +12,8 @@ const User = mongoose.model('User');
 const Session = mongoose.model('Session');
 
 // MIDDLEWARES
-const { authenticated } = require('../middlewares/authenticated');
 const { admin } = require('../middlewares/admin');
+const { user } = require('../middlewares/user');
 
 // VALIDATORS
 const validator = require('../validators/validator'); // general validator
@@ -82,7 +82,7 @@ router.post('/register', async (request, response) => {
 
         sendMail(emailPackage);
 
-        response.send('Verification link has been sent to user');
+        return response.json({ success: true, msg: 'Verification link has been sent to user' });
     } catch (error) {
         return response.status(422).send({ error: error.message });
     }
@@ -108,15 +108,35 @@ router.post('/login', async (request, response) => {
             return response.status(422).json({ error: 'User with the given email doesnt exist' });
         }
 
-        if (!user.email_verified || user.email_verification_token) {
-            return response.status(422).json({ error: 'You must verify your account' });
-        }
-
         // compare users password with the database password
         const isMatch = await user.comparePassword(password);
 
         if (!isMatch) {
             return response.status(422).json({ error: 'Email or Password is wrong' });
+        }
+
+        if (!user.email_verified || user.email_verification_token) {
+
+            // if users email verification token expired or tried to login with verifying it, we send another email verifiaction token to their email and delete the other token, this approach saves time as we dont have to open an another route for resending email verification token.
+            const email_verification_token = srs({ length: 128 });
+            const email_verification_token_expiration_date = Date.now() + times.ONE_HOUR;
+
+            user.email_verification_token = email_verification_token;
+            user.email_verification_token_expiration_date = email_verification_token_expiration_date;
+
+            await user.save();
+
+            const emailPackage = {
+                from: 'no-reply@voteapp.com',
+                to: email,
+                subject: 'ESN VOTING EMAIL VERIFICATION LINK',
+                text: `Please verify your email for this UserName: ${user.user_name}`,
+                html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify email</a>`
+            }
+    
+            sendMail(emailPackage);
+
+            return response.status(422).json({ error: 'You must verify your account' });
         }
 
         // create a new session uuid
@@ -242,12 +262,45 @@ router.get('/register-user', admin, async (request, response) => {
 // #route:  POST /register-user
 // #desc:   User sends a request to admin to be registered
 // #access: Private
-router.post('/register-user', admin, async (request, response) => {
+router.post('/register-executive', admin, async (request, response) => {
 
     try {
-        const { uuid } = request.session;
-        const user = await User.findOne({ uuid });
-        response.send(`Your are ${user.role}`);
+        const { user_name, email } = request.session;
+
+        if (!user_name || !email) {
+            return response.status(422).json({ error: 'Admin has to provide email and user name of the executive' });
+        }
+
+        if (!validator.validateEmail(email)) {
+            return response.status(422).send({ error: 'Email is not valid' });
+        }
+
+        const email_verification_token = srs({ length: 128 });
+        const email_verification_token_expiration_date = Date.now() + times.ONE_HOUR;
+
+        const temporaryPassword = srs({ length: 8 });
+
+        const user = new User({ 
+            user_name, 
+            email, 
+            password: temporaryPassword, 
+            email_verification_token, 
+            email_verification_token_expiration_date
+        });
+
+        await user.save();
+
+        const emailPackage = {
+            from: 'no-reply@voteapp.com',
+            to: email,
+            subject: 'ESN VOTING EMAIL VERIFICATION LINK',
+            text: `UserName: ${user.user_name}`,
+            html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
+        }
+
+        sendMail(emailPackage);
+
+        return response.json({ success: true, msg: 'Successfully registered an executive' });
     } catch (error) {
         console.log(error.message);
         return response.status(422).send({ error: error.message });

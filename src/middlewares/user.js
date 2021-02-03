@@ -2,17 +2,23 @@
 // NODE MODULES
 const mongoose = require('mongoose')
 
-// HELPERS
-const { checkUUID } = require('./checkUUID');
+// MODELS 
+const User = mongoose.model('User');
 
-async function authenticated(request, response, next) {
+// HELPERS
+const { checkUUID } = require('./helpers/checkUUID');
+
+async function user(request, response, next) {
     try {
 
         const { uuid } = request.session;
 
         checkUUID(request, response, uuid);
 
-        return next();
+        const user = await User.findOne({ uuid });
+
+        request.user = user;
+        next();
 
     } catch (error) {
         console.log(error.message);
@@ -20,4 +26,4 @@ async function authenticated(request, response, next) {
     }
 }
 
-module.exports = { authenticated };
+module.exports = { user };

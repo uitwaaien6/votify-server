@@ -13,8 +13,10 @@ const Session = mongoose.model('Session');
 const Vote = mongoose.model('Vote');
 
 // MIDDLEWARES
-const { authenticated } = require('../middlewares/authenticated');
+
 const { admin } = require('../middlewares/admin');
+const { executive } = require('../middlewares/executive');
+const { user } = require('../middlewares/user');
 
 // VALIDATORS
 const validator = require('../validators/validator'); // general validator
@@ -57,6 +59,36 @@ router.post('/start-vote', admin, async (request, response) => {
         await vote.save();
 
         return response.json({ success: true, msg: 'A new vote has been successfully started' });
+
+    } catch (error) {
+        console.log(` ! Error in voteRoutes.js`, error.message);
+    }
+});
+
+// #route:  GET /votes
+// #desc:   User get votes
+// #access: Private
+router.get('/votes', executive, async (request, response) => {
+    try {
+        
+        
+
+        return response.json({ success: true, msg: 'You have successfully get the votes' });
+
+    } catch (error) {
+        console.log(` ! Error in voteRoutes.js`, error.message);
+    }
+});
+
+// #route:  POST /vote
+// #desc:   Executive votes 
+// #access: Private
+router.post('/vote', executive, async (request, response) => {
+    try {
+        
+        
+
+        return response.json({ success: true, msg: 'You have successfully voted' });
 
     } catch (error) {
         console.log(` ! Error in voteRoutes.js`, error.message);
