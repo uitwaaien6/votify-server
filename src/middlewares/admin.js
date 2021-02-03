@@ -34,6 +34,7 @@ async function admin(request, response, next) {
             return response.status(401).send({ error: 'user with the given uuid is not admin' });
         }
 
+        request.user = user;
         next();
 
     } catch (error) {

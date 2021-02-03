@@ -9,14 +9,6 @@ const session = require('express-session');
 // APPLICATION
 const app = express();
 
-// MODELS
-require('./models/UserModel');
-require('./models/SessionModel');
-require('./models/VoteModel');
-
-// ROUTES
-const authRoutes = require('./routes/authRoutes');
-
 // CONFIG
 require('../_config/dbConnection');
 const {
@@ -26,6 +18,18 @@ const {
     SESSION_LIFETIME,
     SESSION_NAME,
 } = require('../_config/environment');
+
+// MODELS
+require('./models/UserModel');
+require('./models/SessionModel');
+require('./models/VoteModel');
+
+// TIMERS
+require('./timers/checkSessionsLifetime');
+
+// ROUTES
+const authRoutes = require('./routes/authRoutes');
+const voteRoutes = require('./routes/voteRoutes');
 
 // NODE ENVIRONMENT CONFIG
 const IN_PROD = NODE_ENV === 'production';
@@ -50,6 +54,7 @@ app.use(
 );
 
 app.use(authRoutes);
+app.use(voteRoutes);
 
 // LISTEN
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));

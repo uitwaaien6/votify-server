@@ -1,8 +1,26 @@
 // NODE MODULES
 const mongoose = require('mongoose');
 
-// SCHEMAS
-const userSchema = require('./UserModel');
+const voterSchema = mongoose.Schema({
+    user_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
+    user_name: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    is_voted: {
+        type: Boolean,
+        default: false
+    }
+});
 
 const voteSchema = mongoose.Schema({
     user_id: {
@@ -21,25 +39,17 @@ const voteSchema = mongoose.Schema({
         required: true
     },
     votes: {
-        type: Array,
-        default: []
+        type: Object,
+        default: {}
     },
     voters: {
-        type: [userSchema],
+        type: [voterSchema],
         ref: 'User'
     },
     active: {
         type: Boolean,
         default: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now()
-    },
-    updated_at: {
-        type: Date,
-        default: Date.now()
     }
-});
+}, { timestamps: true });
 
 mongoose.model('Vote', voteSchema);

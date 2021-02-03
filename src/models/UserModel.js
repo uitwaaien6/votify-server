@@ -6,6 +6,16 @@ const bcrypt = require('bcrypt');
 // ROLES
 const roles = require('../../_config/roles');
 
+const voteSchema = mongoose.Schema({
+    vote_id: {
+        type: mongoose.Schema.Types.ObjectId
+    },
+    is_voted: {
+        type: Boolean,
+        default: false
+    }
+});
+
 const userSchema = mongoose.Schema({
     user_name: {
         type: String,
@@ -58,9 +68,8 @@ const userSchema = mongoose.Schema({
         type: Boolean,
         default: false
     },
-    is_voted: {
-        type: Boolean,
-        default: false
+    votes: {
+        type: [voteSchema]
     },
     permission: {
         type: Number,
@@ -103,7 +112,7 @@ userSchema.methods.comparePassword = function(usersPlainPassword) {
             }
 
             if (!isMatch) {
-                return reject(false);
+                return resolve(isMatch);
             }
 
             return resolve(isMatch);

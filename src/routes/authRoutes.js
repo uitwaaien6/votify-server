@@ -18,16 +18,18 @@ const { admin } = require('../middlewares/admin');
 // VALIDATORS
 const validator = require('../validators/validator'); // general validator
 
+// MAILERS
+const { sendMail } = require('../mailers/sendMail');
+
 // CONFIG > EXPIRATION DATES
 const times = require('../../_config/times');
 
 // CONFIG > ROLES
 const roles = require('../../_config/roles');
 
-// MAILERS
-const { sendMail } = require('../mailers/sendMail');
 
 // ========= PUBLIC ROUTES =============
+
 
 // #route:  POST /register
 // #desc:   User register itself
@@ -35,9 +37,9 @@ const { sendMail } = require('../mailers/sendMail');
 router.post('/register', async (request, response) => {
 
     try {
-        const { user_name, email, password, passwordVerification } = request.body;
+        const { userName, email, password, passwordVerification } = request.body;
 
-        if (!user_name || !email || !password || !passwordVerification) {
+        if (!userName || !email || !password || !passwordVerification) {
             return response.status(422).send({ error: 'user name or email or password is not provided' });
         }
 
@@ -53,7 +55,7 @@ router.post('/register', async (request, response) => {
             return response.status(422).send({ error: 'password you entered is not matched' });
         }
 
-        if (user_name.includes(' ')) {
+        if (userName.includes(' ')) {
             return response.status(422).send({ error: 'invalid username' });
         }
 
@@ -61,7 +63,7 @@ router.post('/register', async (request, response) => {
         const email_verification_token_expiration_date = Date.now() + times.ONE_HOUR;
 
         const user = new User({ 
-            user_name, 
+            user_name: userName, 
             email, 
             password, 
             email_verification_token, 
@@ -97,7 +99,7 @@ router.post('/login', async (request, response) => {
         const { email, password } = request.body;
 
         if (!email || !password) {
-            return response.status(422).send({ error: 'please enter your email and password' });
+            return response.status(422).json({ error: 'please enter your email and password' });
         }
 
         const user = await User.findOne({ email });
@@ -106,26 +108,34 @@ router.post('/login', async (request, response) => {
             return response.status(422).json({ error: 'User with the given email doesnt exist' });
         }
 
-        if (!user.email_verified) {
+        if (!user.email_verified || user.email_verification_token) {
             return response.status(422).json({ error: 'You must verify your account' });
         }
 
-        await user.comparePassword(password);
+        // compare users password with the database password
+        const isMatch = await user.comparePassword(password);
 
-        //if (!isMatch) {
-            //return response.status(422).json({ error: 'Email or Password is wrong' });
-        //}
+        if (!isMatch) {
+            return response.status(422).json({ error: 'Email or Password is wrong' });
+        }
 
+        // create a new session uuid
         sessionUUID = uuid.v4();
+        // create a session property called uuid and give that new session uuid
         request.session.uuid = sessionUUID;
+
+        // make user uuid equals that uuid
         user.uuid = sessionUUID;
+        // create a new session with the uuid and user id
         const session = new Session({ user_id: user._id, uuid: sessionUUID });
+
+        // save user and session to the database
         await Promise.all([user.save(), session.save()]);
 
         response.json({ success: true, msg: 'Successfully logged in' });
 
     } catch (error) {
-        console.log('Error in Login', error);
+        console.log(error);
         return response.status(422).json({ error: error.message });
     }
 
@@ -194,7 +204,7 @@ router.post('/password-reset/send-link', async (request, response) => {
 
         sendMail(emailPackage);
 
-        response.json({ success: true, msg: 'Password reset link has been successfully sent to your email address', _info: `api/auth/verification/password-reset/reset-password/${user._id}/${password_reset_token}` }); // TODO DELETE INFO PROP
+        response.json({ success: true, msg: 'Password reset link has been successfully sent to your email address', _info: `/api/auth/verification/password-reset/reset-password/${user._id}/${password_reset_token}` }); // TODO DELETE INFO PROP
     
     } catch (error) {
         console.log(error.message);
@@ -263,7 +273,7 @@ router.get('/api/auth/verification/verify-email/:userId/:emailVerificationToken'
             return response.status(422).send({ error: 'Something went wrong' });
         }
         
-        if (Date.now() > user.email_verification_token_expiration_date) {
+        if (Date.now() > user.email_verification_token_expiration_date || Date.now() > (Date.parse(user.email_verification_token_expiration_date))) {
             return response.status(422).send({ error: 'Something went wrong' });
         }
 
@@ -322,7 +332,7 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
             return response.status(422).send({ error: 'password reset token authentication failed' });
         }
 
-        if (Date.now() > user.password_reset_token_expiration_date) {
+        if (Date.now() > user.password_reset_token_expiration_date || Date.now() > (Date.parse(user.password_reset_token_expiration_date))) {
             return response.status(422).send({ error: 'password reset token expiration date has passed' });
         }
 
@@ -339,8 +349,11 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
         }
 
         user.password = password;
-        user.password_reset_token = undefined;
-        user.password_reset_token_expiration_date = undefined;
+        user.password_reset_token = null;
+        user.password_reset_token_expiration_date = null;
+
+        // delete current working session if there is any, because user changed the password
+        await Session.deleteOne({ user_id: user._id });
 
         await user.save();
 
