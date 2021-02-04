@@ -139,7 +139,7 @@ router.post('/login', async (request, response) => {
 
             // if users email verification token expired or tried to login with verifying it, we send another email verifiaction token to their email and delete the other token, this approach saves time as we dont have to open an another route for resending email verification token.
             const email_verification_token = srs({ length: 128 });
-            const email_verification_token_expiration_date = Date.now() + times.ONE_HOUR;
+            const email_verification_token_expiration_date = Date.now() + (times.ONE_HOUR * 2);
 
             user.email_verification_token = email_verification_token;
             user.email_verification_token_expiration_date = email_verification_token_expiration_date;
@@ -175,7 +175,7 @@ router.post('/login', async (request, response) => {
         // save user and session to the database
         await Promise.all(promises);
 
-        response.json({ success: true, msg: 'Successfully logged in' });
+        response.json({ success: true, msg: 'Successfully logged in', role: user.role });
 
     } catch (error) {
         console.log(error);
@@ -374,7 +374,7 @@ router.get('/api/auth/verification/verify-email/:userId/:emailVerificationToken'
         // save user to the database
         await user.save();
 
-        response.send(`email with the given user id has been verified ${user._id}`);
+        return response.json({ success: true, msg: `Your Email has been verified` });
     } catch (error) {
         return response.status(422).send({ error: error.message });
     }
@@ -388,7 +388,7 @@ router.get('/api/auth/verification/password-reset/reset-password/:userId/:passwo
 
     try {
 
-        response.send('you can create your new password');
+        return response.json({ success: true, msg: 'you can create your new password' });
     
     } catch (error) {
         console.log(error.message);

@@ -50,7 +50,7 @@ router.post('/start-vote', admin, async (request, response) => {
         const defaultOptions = ['evet', 'hayir', 'cekimser'];
 
         if (!title || title === ' ') {
-            response.status(422).json({ error: 'Title or options are not provided' });
+            return response.status(422).json({ error: 'Title or options are not provided' });
         }
 
         const votes = await Vote.find();
@@ -135,5 +135,34 @@ router.get('/votes/:voteId', authentication, async (request, response) => {
         console.log(` ! Error in voteRoutes.js`, error.message);
     }
 });
+
+// #route:  POST /vote
+// #desc:   Executive votes 
+// #access: Private
+router.get('/votes/:voteId/vote', executive, async (request, response) => {
+    try {
+        
+        const { voteOption } = request.body;
+        const { voteId } = request.params;
+        const vote = await Vote.findOne({ client_id: voteId });
+        const user = request.user;
+
+        if (!vote) {
+            return response.status(422).json({ error: 'Vote you are looking for doesnt exist' });
+        }
+
+        if (!vote.active) {
+            return response.status(422).json({ error: 'The Vote you are looking for is inactive or admin shutdown' });
+        }
+
+        
+
+        return response.json({ success: true, msg: 'You have successfully voted', vote: clientVote, role: user.role  });
+
+    } catch (error) {
+        console.log(` ! Error in voteRoutes.js`, error.message);
+    }
+});
+
 
 module.exports = router;
