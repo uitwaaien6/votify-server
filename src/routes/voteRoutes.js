@@ -70,6 +70,7 @@ router.post('/start-vote', admin, async (request, response) => {
 
     } catch (error) {
         console.log(` ! Error in voteRoutes.js`, error.message);
+        return response.status(422).json({ error: error.message });
     }
 });
 
@@ -80,6 +81,7 @@ router.get('/votes', authentication, async (request, response) => {
     try {
         
         const votes = await Vote.find();
+        const user = request.user;
 
         if (!votes) {
             return response.status(422).json({ error: 'Votes doesnt exist' });
@@ -95,10 +97,11 @@ router.get('/votes', authentication, async (request, response) => {
             }
         });
 
-        return response.json({ success: true, msg: 'You have successfully get the votes', votes: clientVotes });
+        return response.json({ success: true, msg: 'You have successfully get the votes', votes: clientVotes, role: user.role });
 
     } catch (error) {
         console.log(` ! Error in voteRoutes.js`, error.message);
+        return response.status(422).json({ error: error.message });
     }
 });
 
@@ -108,13 +111,25 @@ router.get('/votes', authentication, async (request, response) => {
 router.get('/votes/:voteId', authentication, async (request, response) => {
     try {
         
-        const { voteId }= request.params;
-
+        const { voteId } = request.params;
         const vote = await Vote.findOne({ client_id: voteId });
+        const user = request.user;
 
+        if (!vote) {
+            return response.status(422).json({ error: 'Vote you are looking for doesnt exist' });
+        }
 
+        if (!vote.active) {
+            return response.status(422).json({ error: 'The Vote you are looking for is inactive or admin shutdown' });
+        }
 
-        return response.json({ success: true, msg: 'You have successfully voted' });
+        const clientVote = {
+            title: vote.title,
+            options: vote.options,
+            id: vote.client_id
+        }
+
+        return response.json({ success: true, msg: 'You have successfully voted', vote: clientVote, role: user.role  });
 
     } catch (error) {
         console.log(` ! Error in voteRoutes.js`, error.message);
