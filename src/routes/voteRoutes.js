@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const srs = require('secure-random-string');
 const uuid = require('uuid');
 
+// ROUTER
 const router = express.Router();
 
 // MODELS
