@@ -5,23 +5,15 @@ const mongoose = require('mongoose')
 // MODELS 
 const User = mongoose.model('User');
 
-// CONFIG 
-const roles = require('../../../_config/roles');
-const times = require('../../../_config/times');
-
 // HELPERS
 const { checkUUID } = require('./helpers/checkUUID');
 
-async function user(request, response, next) {
+async function authentication(request, response, next) {
     try {
 
         const { uuid } = request.session;
 
         const { user, session } = await checkUUID(request, response, uuid);
-
-        if (user.role !== roles.USER || user.is_admin || user.permission !== roles.PERMISSION_3) {
-            return response.status(401).json({ error: 'User with the given id is not user' });
-        }
 
         request.user = user;
         next();
@@ -32,4 +24,4 @@ async function user(request, response, next) {
     }
 }
 
-module.exports = { user };
+module.exports = { authentication };

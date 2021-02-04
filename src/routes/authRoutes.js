@@ -45,6 +45,24 @@ router.post('/register', async (request, response) => {
             return response.status(422).send({ error: 'user name or email or password is not provided' });
         }
 
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+
+            let errMessage = ''
+
+            if (existingUser.email_verified) {
+                errMessage = 'This email has been taken';
+            }
+
+            if (!existingUser.email_verified) {
+                errMessage = 'This email has been registered but email is not verified, if you are the owner of this email please verify your email.'
+            }
+
+            return response.status(422).json({ error: errMessage });
+
+        }
+
         if (!validator.validateEmail(email)) {
             return response.status(422).send({ error: 'Email is not valid' });
         }

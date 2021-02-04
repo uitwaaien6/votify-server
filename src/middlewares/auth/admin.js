@@ -25,8 +25,8 @@ async function admin(request, response, next) {
 
         console.log(user, session);
 
-        if (user.role !== roles.ADMIN || !user.is_admin || user.permission !== 1) {
-            return response.status(401).json({ error: 'user with the given uuid is not admin' });
+        if (user.role !== roles.ADMIN || !user.is_admin || user.permission !== roles.PERMISSION_1) {
+            return response.status(401).json({ error: 'user with the given id is not an admin' });
         }
 
         request.user = user;

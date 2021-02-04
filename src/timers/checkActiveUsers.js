@@ -11,7 +11,7 @@ const User = mongoose.model('User');
 const times = require('../../_config/times');
 const THREE_HOURS = times.ONE_HOUR * 3;
 
-async function checkActiveUsers() {
+async function checkActiveUsers(ttl) {
 
     try {
 
@@ -28,7 +28,9 @@ async function checkActiveUsers() {
         // collect passive users
         users.forEach((user, index) => {
             const isActive = user.active;
-            if (!isActive) {
+
+            // check the created time as well otherwise it can delete a user who is just registered to the system.
+            if (!isActive && Date.now() > (Date.parse(user.createdAt) + tll)) {
                 passiveUsers.push(user);
             }
         });
@@ -46,9 +48,9 @@ async function checkActiveUsers() {
 
 }
 
-checkActiveUsers();
+checkActiveUsers(times.ONE_HOUR * 24);
 
 setInterval(() => {
-    checkActiveUsers();
+    checkActiveUsers(times.ONE_HOUR * 24);
 }, times.ONE_HOUR);
 

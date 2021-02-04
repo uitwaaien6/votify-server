@@ -31,6 +31,10 @@ const voteSchema = mongoose.Schema({
         required: true,
         ref: 'User'
     },
+    client_id: {
+        type: Number,
+        unique: true
+    },
     title: {
         type: String,
         required: true,
