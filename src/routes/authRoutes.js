@@ -13,8 +13,9 @@ const User = mongoose.model('User');
 const Session = mongoose.model('Session');
 
 // MIDDLEWARES
-const { admin } = require('../middlewares/admin');
-const { user } = require('../middlewares/user');
+const { admin } = require('../middlewares/auth/admin');
+const { executive } = require('../middlewares/auth/executive');
+const { user } = require('../middlewares/auth/user');
 
 // VALIDATORS
 const validator = require('../validators/validator'); // general validator
@@ -150,8 +151,11 @@ router.post('/login', async (request, response) => {
         // create a new session with the uuid and user id
         const session = new Session({ user_id: user._id, uuid: sessionUUID });
 
+        // save promises for efficiency
+        const promises = [user.save(), session.save()];
+
         // save user and session to the database
-        await Promise.all([user.save(), session.save()]);
+        await Promise.all(promises);
 
         response.json({ success: true, msg: 'Successfully logged in' });
 
@@ -170,7 +174,11 @@ router.get('/logout', async (request, response) => {
     try {
 
         const { uuid } = request.session;
-        console.log(request.session);
+        request.session.destroy();
+
+        if (!uuid) {
+            return response.status(422).json({ error: 'No uuid found in cookies, will try to destory session' });
+        }
 
         const user = await User.findOne({ uuid });
 
@@ -185,7 +193,6 @@ router.get('/logout', async (request, response) => {
 
         await Promise.all([user.save(), Session.deleteOne({ user_id: user._id })]);
 
-        request.session.destroy();
         response.json({ success: true });
     } catch (error) {
         return response.status(422).send({ error: error.message });
@@ -266,9 +273,9 @@ router.get('/register-user', admin, async (request, response) => {
 router.post('/register-executive', admin, async (request, response) => {
 
     try {
-        const { user_name, email } = request.session;
+        const { userName, email } = request.body;
 
-        if (!user_name || !email) {
+        if (!userName || !email) {
             return response.status(422).json({ error: 'Admin has to provide email and user name of the executive' });
         }
 
@@ -276,15 +283,22 @@ router.post('/register-executive', admin, async (request, response) => {
             return response.status(422).send({ error: 'Email is not valid' });
         }
 
+        if (userName.includes(' ')) {
+            return response.status(422).json({ error: 'Please enter a valid username' });
+        }
+
         const email_verification_token = srs({ length: 128 });
         const email_verification_token_expiration_date = Date.now() + times.ONE_HOUR;
 
-        const temporaryPassword = srs({ length: 8 });
+        const temporaryPassword = srs({ length: 9 });
 
         const user = new User({ 
-            user_name, 
+            user_name: userName, 
             email, 
-            password: temporaryPassword, 
+            password: temporaryPassword,
+            role: roles.EXECUTIVE,
+            permission: roles.PERMISSION_2,
+            active: true,
             email_verification_token, 
             email_verification_token_expiration_date
         });
@@ -407,7 +421,8 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
         user.password_reset_token_expiration_date = null;
 
         // delete current working session if there is any, because user changed the password
-        await Session.deleteOne({ user_id: user._id });
+
+        await Session.deleteMany({ user_id: user._id });
 
         await user.save();
 

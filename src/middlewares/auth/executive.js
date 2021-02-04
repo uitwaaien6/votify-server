@@ -9,29 +9,22 @@ const User = mongoose.model('User');
 const Session = mongoose.model('Session');
 
 // CONFIG 
-const roles = require('../../_config/roles');
-const times = require('../../_config/times');
+const roles = require('../../../_config/roles');
+const times = require('../../../_config/times');
 
 // HELPERS
 const { checkUUID } = require('./helpers/checkUUID');
 
 // admin middleware also checks if this user's session still open
-async function admin(request, response, next) {
+async function executive(request, response, next) {
     try {
 
         const { uuid } = request.session;
 
-        checkUUID(request, response, uuid);
+        const { user, session } = await checkUUID(request, response, uuid);
 
-        // find user and session in the database
-        const user = await User.findOne({ uuid });
-
-        if (!user) {
-            return response.status(422).send({ error: 'User with this uuid doesnt exist' });
-        }
-
-        if (user.role !== roles.ADMIN || !user.is_admin || user.permission !== 1) {
-            return response.status(401).send({ error: 'user with the given uuid is not admin' });
+        if (user.role !== roles.EXECUTIVE || user.is_admin || user.permission !== 2) {
+            return response.status(401).send({ error: 'user with the given uuid is not executive' });
         }
 
         request.user = user;
@@ -43,4 +36,4 @@ async function admin(request, response, next) {
     }
 }
 
-module.exports = { admin };
+module.exports = { executive };

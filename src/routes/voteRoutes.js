@@ -14,9 +14,9 @@ const Vote = mongoose.model('Vote');
 
 // MIDDLEWARES
 
-const { admin } = require('../middlewares/admin');
-const { executive } = require('../middlewares/executive');
-const { user } = require('../middlewares/user');
+const { admin } = require('../middlewares/auth/admin');
+const { executive } = require('../middlewares/auth/executive');
+const { user } = require('../middlewares/auth/user');
 
 // VALIDATORS
 const validator = require('../validators/validator'); // general validator
@@ -45,11 +45,14 @@ router.post('/start-vote', admin, async (request, response) => {
     try {
         
         const { title, options } = request.body;
-        let defaultOptions = ['evet', 'hayir', 'cekimser'];
+
+        const defaultOptions = ['evet', 'hayir', 'cekimser'];
 
         if (!title || title === ' ') {
             response.status(422).json({ error: 'Title or options are not provided' });
         }
+
+        console.log(request.user);
 
         const vote = new Vote({
             user_id: request.user._id,
@@ -69,12 +72,26 @@ router.post('/start-vote', admin, async (request, response) => {
 // #route:  GET /votes
 // #desc:   User get votes
 // #access: Private
-router.get('/votes', executive, async (request, response) => {
+router.get('/votes', user, async (request, response) => {
     try {
         
-        
+        const votes = await Vote.find();
 
-        return response.json({ success: true, msg: 'You have successfully get the votes' });
+        if (!votes) {
+            return response.status(422).json({ error: 'Votes doesnt exist' });
+        }
+
+        const clientVotes = votes.map((vote, index) => {
+            if (vote.active) {
+                return {
+                    title: vote.title,
+                    options: vote.options,
+                    id: vote._id
+                }
+            }
+        });
+
+        return response.json({ success: true, msg: 'You have successfully get the votes', votes: clientVotes });
 
     } catch (error) {
         console.log(` ! Error in voteRoutes.js`, error.message);

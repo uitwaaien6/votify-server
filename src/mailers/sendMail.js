@@ -6,8 +6,8 @@ const { EMAIL_PASSWORD } = require('../../_config/environment');
 
 async function sendMail(package) {
 
-
     try {
+
         let transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -16,7 +16,7 @@ async function sendMail(package) {
             },
         });
 
-        let info = await transporter.sendMail({
+        await transporter.sendMail({
             from: package.from, // sender address
             to: package.to, // list of receivers
             subject: package.subject, // Subject line
@@ -27,6 +27,7 @@ async function sendMail(package) {
     } catch (error) {
         console.log(` ! Error in sendEmail.js`, error.message);
     }
+    
 }
 
 module.exports = {

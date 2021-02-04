@@ -53,7 +53,7 @@ const userSchema = mongoose.Schema({
     },
     uuid: {
         type: String,
-        unique: true,
+        default: null
     },
     active: {
         type: Boolean,
@@ -73,7 +73,7 @@ const userSchema = mongoose.Schema({
     },
     permission: {
         type: Number,
-        default: 3
+        default: roles.PERMISSION_3
     }
 }, { timestamps: true });
 

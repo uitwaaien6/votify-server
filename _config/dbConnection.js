@@ -13,6 +13,6 @@ mongoose.connect(mongoURI, {
     useCreateIndex: true
 });
 
-mongoose.connection.on('connected', () => console.log(`Connect to MongoDB Instance`));
+mongoose.connection.on('connected', () => console.log(`Connected to MongoDB Instance`));
 mongoose.connection.on('error', () => console.log(`Error Connectiong to MongoDB Instance`));
 

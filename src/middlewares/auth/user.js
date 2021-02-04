@@ -13,9 +13,7 @@ async function user(request, response, next) {
 
         const { uuid } = request.session;
 
-        checkUUID(request, response, uuid);
-
-        const user = await User.findOne({ uuid });
+        const { user, session } = await checkUUID(request, response, uuid);
 
         request.user = user;
         next();

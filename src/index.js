@@ -26,6 +26,7 @@ require('./models/VoteModel');
 
 // TIMERS
 require('./timers/checkSessionsLifetime');
+require('./timers/checkActiveUsers');
 
 // ROUTES
 const authRoutes = require('./routes/authRoutes');
