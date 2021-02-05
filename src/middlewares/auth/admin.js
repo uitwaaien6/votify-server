@@ -23,8 +23,6 @@ async function admin(request, response, next) {
 
         const { user, session } = await checkUUID(request, response, uuid);
 
-        console.log(user, session);
-
         if (user.role !== roles.ADMIN || !user.is_admin || user.permission !== roles.PERMISSION_1) {
             return response.status(401).json({ error: 'user with the given id is not an admin' });
         }

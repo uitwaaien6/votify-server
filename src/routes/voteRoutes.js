@@ -25,6 +25,9 @@ const validator = require('../validators/validator'); // general validator
 // MAILERS
 const { sendMail } = require('../mailers/sendMail');
 
+// ROUTES > HELPERS
+const configVoteOptions = require('./helpers/configVoteOptions');
+
 // CONFIG > EXPIRATION DATES
 const times = require('../../_config/times');
 
@@ -38,52 +41,6 @@ const roles = require('../../_config/roles');
 
 // ========= PRIVATE ROUTES =============
 
-
-// #route:  POST /start-vote
-// #desc:   Admin creates a new vote
-// #access: Private
-router.post('/start-vote', admin, async (request, response) => {
-    try {
-        
-        const { title, options } = request.body;
-        const user = request.user;
-
-        const defaultOptions = ['evet', 'hayir', 'cekimser'];
-
-        if (!title || title === ' ') {
-            return response.status(422).json({ error: 'Title or options are not provided' });
-        }
-
-        const dbVotes = await Vote.find();
-        const clientIds = dbVotes.map((vote, index) => vote.client_id);
-        const clientId = clientIds?.sort().reverse()[0] + 1;
-
-        const votes = {}; // votes property of the voteSchema
-
-        // fillin the properties of votes with the options provided by user of default. 
-        (!options || options.length === 0 ? defaultOptions : options.concat('cekimser')).forEach((option, index) => {
-            votes[option] = 0;
-        });
-
-        // TODO MAYBE Remove the options prop and just votes as an object.
-
-        const vote = new Vote({
-            user_id: user._id,
-            client_id: clientId ? clientId : 1,
-            title,
-            votes,
-            options: !options || options.length === 0 ? defaultOptions : options.concat('cekimser')
-        });
-
-        await vote.save();
-
-        return response.json({ success: true, msg: 'A new vote has been successfully started' });
-
-    } catch (error) {
-        console.log(` ! Error in voteRoutes.js`, error.message);
-        return response.status(422).json({ error: error.message });
-    }
-});
 
 // #route:  GET /votes
 // #desc:   User get votes
@@ -153,9 +110,11 @@ router.get('/votes/:voteId', authentication, async (request, response) => {
 router.post('/make-vote', executive, async (request, response) => {
     try {
         
-        const { voteOption, voteId } = request.body;
-        const vote = await Vote.findOne({ client_id: voteId });
         const user = request.user;
+        const { voteOption, voteClientId } = request.body;
+
+        const vote = await Vote.findOne({ client_id: voteClientId });
+        const executives = await User.find({ role: roles.EXECUTIVE, is_admin: false, permission: roles.PERMISSION_2 }); // aka voters
 
         if (!vote) {
             return response.status(422).json({ error: 'Vote you are looking for doesnt exist' });
@@ -166,20 +125,39 @@ router.post('/make-vote', executive, async (request, response) => {
         }
 
         if (!vote.options.includes(voteOption)) {
-            return response.status(422).json({ error: 'The option you provided is not a valid vote option' });
+            return response.status(422).json({ error: 'The option you provided is not a valid options array' });
+        }
+        
+        if (!vote.votes[voteOption]) {
+            return response.status(422).json({ error: 'Option you proivded in votes is invalid property or doesnt match' });
         }
 
         const userVote = user.votes.find((item) => item.vote_id === vote._id);
 
+        // check if user model includes that vote if it is means that user already votes for that vote.
         if (userVote) {
-            console.log('Already exist vote in user votes');
-            return response.status(422).json({ error: 'You already voted for this vote' });
+            return response.status(422).json({ error: 'You already voted for this vote, Already exist vote in user votes' });
         }
 
         const voter = vote.voters.find((item, index) => item.user_id === user._id);
 
+        // check if vote model includes that vote if it is means that user already votes for that vote.
         if (voter) {
-            return response.status(422).json({ error: 'Voter in vote model, vote has been denied' });
+            return response.status(422).json({ error: 'Voter in already vote model, vote has been denied' });
+        }
+
+        let totalOptionsValues = 0;
+
+        const votesProps = Object.getOwnPropertyNames(vote.votes);
+
+        votesProps.forEach((option, index) => {
+            totalOptionsValues += vote.votes[option];
+        });
+
+        console.log(` ! Debug: Total options values:`, totalOptionsValues);
+
+        if (totalOptionsValues += 1 > executives.length) { 
+            return response.status(422).json({ error: 'The given vote exceeds the voters length' });
         }
 
         return response.json({ success: true, msg: 'You have successfully voted', role: user.role  });
@@ -189,5 +167,50 @@ router.post('/make-vote', executive, async (request, response) => {
     }
 });
 
+// #route:  POST /start-vote
+// #desc:   Admin creates a new vote
+// #access: Private
+router.post('/start-vote', admin, async (request, response) => {
+    try {
+        
+        const { title, options } = request.body;
+        const user = request.user;
+
+        if (!title || title === ' ') {
+            return response.status(422).json({ error: 'Title or options are not provided' });
+        }
+
+        // auto increment >
+        // get the votes from database
+        const dbVotes = await Vote.find();
+        // extract the client ids of the votes and put them in array
+        const clientIds = dbVotes.map((vote, index) => vote.client_id);
+        // sort them by order reverse them and add 1 to the first one.
+        const clientId = clientIds?.sort().reverse()[0] + 1;
+
+        // config the vote options
+        const { configedOptions, votes } = configVoteOptions(['evet', 'hayir', 'cekimser'], options);
+
+        console.log(configedOptions);
+
+        // TODO MAYBE Remove the options prop and just votes as an object.
+
+        const vote = new Vote({
+            user_id: user._id,
+            client_id: clientId ? clientId : 1, // put it 1 if there is not any for initial.
+            title,
+            votes,
+            options: configedOptions
+        });
+
+        await vote.save();
+
+        return response.json({ success: true, msg: 'A new vote has been successfully started' });
+
+    } catch (error) {
+        console.log(` ! Error in voteRoutes.js`, error.message);
+        return response.status(422).json({ error: error.message });
+    }
+});
 
 module.exports = router;
