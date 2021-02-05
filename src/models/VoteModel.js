@@ -6,22 +6,10 @@ const voterSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true
     },
-    user_name: {
-        type: String,
-        required: true
-    },
-    email: {
-        type: String,
-        required: true
-    },
     option: {
         type: String,
         required: true,
         default: ''
-    },
-    is_voted: {
-        type: Boolean,
-        default: false
     }
 });
 

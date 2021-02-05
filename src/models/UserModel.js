@@ -10,9 +10,10 @@ const voteSchema = mongoose.Schema({
     vote_id: {
         type: mongoose.Schema.Types.ObjectId
     },
-    is_voted: {
-        type: Boolean,
-        default: false
+    option: {
+        type: String,
+        required: true,
+        default: ''
     }
 });
 
