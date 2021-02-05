@@ -46,6 +46,7 @@ router.post('/start-vote', admin, async (request, response) => {
     try {
         
         const { title, options } = request.body;
+        const user = request.user;
 
         const defaultOptions = ['evet', 'hayir', 'cekimser'];
 
@@ -57,18 +58,20 @@ router.post('/start-vote', admin, async (request, response) => {
         const clientIds = dbVotes.map((vote, index) => vote.client_id);
         const clientId = clientIds?.sort().reverse()[0] + 1;
 
-        const votes = {};
+        const votes = {}; // votes property of the voteSchema
 
         // fillin the properties of votes with the options provided by user of default. 
         (!options || options.length === 0 ? defaultOptions : options.concat('cekimser')).forEach((option, index) => {
             votes[option] = 0;
         });
 
+        // TODO MAYBE Remove the options prop and just votes as an object.
+
         const vote = new Vote({
-            user_id: request.user._id,
+            user_id: user._id,
             client_id: clientId ? clientId : 1,
             title,
-            votes: votes,
+            votes,
             options: !options || options.length === 0 ? defaultOptions : options.concat('cekimser')
         });
 
@@ -147,11 +150,10 @@ router.get('/votes/:voteId', authentication, async (request, response) => {
 // #route:  POST /vote
 // #desc:   Executive votes 
 // #access: Private
-router.post('/votes/:voteId/make-vote', executive, async (request, response) => {
+router.post('/make-vote', executive, async (request, response) => {
     try {
         
-        const { voteOption } = request.body;
-        const { voteId } = request.params;
+        const { voteOption, voteId } = request.body;
         const vote = await Vote.findOne({ client_id: voteId });
         const user = request.user;
 
