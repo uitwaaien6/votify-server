@@ -15,10 +15,7 @@ const Session = mongoose.model('Session');
 const Vote = mongoose.model('Vote');
 
 // MIDDLEWARES
-const { admin } = require('../middlewares/auth/admin');
-const { executive } = require('../middlewares/auth/executive');
-const { user } = require('../middlewares/auth/user');
-const { authentication } = require('../middlewares/auth/authentication');
+const middlewares = require('../middlewares');
 
 // VALIDATORS
 const validator = require('../validators/validator'); // general validator
@@ -27,8 +24,11 @@ const validator = require('../validators/validator'); // general validator
 const { sendMail } = require('../mailers/sendMail');
 
 // ROUTES > HELPERS
-const configVoteOptions = require('./helpers/configVoteOptions');
-const calcTotalOptionsValues = require('./helpers/calcTotalOptionsValues');
+const { configVoteOptions } = require('./helpers/configVoteOptions');
+const { calcTotalOptionsValues } = require('./helpers/calcTotalOptionsValues');
+
+// TIMERS
+//const { checkIllegalVotes } = require('../timers/checkIllegalVotes'); TODO, exporting and also calling function overlapping setInterval with every make-vote request
 
 // CONFIG > EXPIRATION DATES
 const times = require('../../_config/times');
@@ -50,11 +50,13 @@ const userVotes = require('../../_config/userVotes');
 // #route:  GET /votes
 // #desc:   User get votes
 // #access: Private
-router.get('/votes', authentication, async (request, response) => {
+router.get('/votes', middlewares.authentication, async (request, response) => {
     try {
         
         const votes = await Vote.find();
         const user = request.user;
+
+        console.log(user);
 
         if (!votes) {
             return response.status(422).json({ error: 'Votes doesnt exist' });
@@ -81,7 +83,7 @@ router.get('/votes', authentication, async (request, response) => {
 // #route:  POST /vote
 // #desc:   Executive votes 
 // #access: Private
-router.get('/votes/:voteId', authentication, async (request, response) => {
+router.get('/votes/:voteId', middlewares.authentication, async (request, response) => {
     try {
         
         const { voteId } = request.params;
@@ -112,7 +114,7 @@ router.get('/votes/:voteId', authentication, async (request, response) => {
 // #route:  POST /vote
 // #desc:   Executive votes 
 // #access: Private
-router.post('/make-vote', executive, async (request, response) => {
+router.post('/make-vote', middlewares.executive, async (request, response) => {
     try {
         
         const { voteOption, voteClientId } = request.body;
@@ -140,9 +142,6 @@ router.post('/make-vote', executive, async (request, response) => {
         }
 
         const totalOptionsValues = calcTotalOptionsValues(vote.votes);
-
-        console.log(` ~ Debug: Total options values`, totalOptionsValues);
-        console.log(` ~ Debug: executives length:`, executives.length);
 
         // first filter, if the total options values exceeds the executives length means that a user trying to vote again.
         if ((totalOptionsValues + userVotes.USER_VOTE) > executives.length) { 
@@ -183,7 +182,7 @@ router.post('/make-vote', executive, async (request, response) => {
 
         // Create new Object value votes in vote schema
         const updatedVotesInVote = { ...vote.votes };
-        updatedVotes[voteOption] += userVotes.USER_VOTE;
+        updatedVotesInVote[voteOption] += userVotes.USER_VOTE;
 
         // Place the new values for User Scehma
         const updatedUser = User.updateOne({ _id: user._id }, { $set: { votes: updatedVotesInUser } });
@@ -204,7 +203,7 @@ router.post('/make-vote', executive, async (request, response) => {
 // #route:  POST /start-vote
 // #desc:   Admin creates a new vote
 // #access: Private
-router.post('/start-vote', admin, async (request, response) => {
+router.post('/start-vote', middlewares.admin, async (request, response) => {
     try {
         
         const { title, options } = request.body;

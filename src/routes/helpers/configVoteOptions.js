@@ -1,5 +1,5 @@
 
-module.exports = function configVoteOptions(defaultOptionsValues, options) {
+function configVoteOptions(defaultOptionsValues, options) {
 
     try {
         const votes = {};
@@ -24,3 +24,5 @@ module.exports = function configVoteOptions(defaultOptionsValues, options) {
     }
 
 }
+
+module.exports = { configVoteOptions };

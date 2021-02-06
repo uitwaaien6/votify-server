@@ -5,6 +5,7 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const cookieParser = require('cookie-parser');
 
 // APPLICATION
 const app = express();
@@ -27,6 +28,7 @@ require('./models/VoteModel');
 // TIMERS
 require('./timers/checkSessionsLifetime');
 require('./timers/checkActiveUsers');
+require('./timers/checkIllegalVotes');
 
 // ROUTES
 const authRoutes = require('./routes/authRoutes');
@@ -34,6 +36,8 @@ const voteRoutes = require('./routes/voteRoutes');
 
 // NODE ENVIRONMENT CONFIG
 const IN_PROD = NODE_ENV === 'production';
+
+app.use(cookieParser());
 
 // APP CONFIG
 app.use(bodyParser.json({

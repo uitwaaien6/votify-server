@@ -14,9 +14,7 @@ const User = mongoose.model('User');
 const Session = mongoose.model('Session');
 
 // MIDDLEWARES
-const { admin } = require('../middlewares/auth/admin');
-const { executive } = require('../middlewares/auth/executive');
-const { user } = require('../middlewares/auth/user');
+const middlewares = require('../middlewares');
 
 // VALIDATORS
 const validator = require('../validators/validator'); // general validator
@@ -277,7 +275,7 @@ router.post('/password-reset/send-link', async (request, response) => {
 // #route:  POST /register-user
 // #desc:   User sends a request to admin to be registered
 // #access: Private
-router.get('/register-user', admin, async (request, response) => {
+router.get('/register-user', middlewares.admin, async (request, response) => {
 
     try {
 
@@ -299,7 +297,7 @@ router.get('/register-user', admin, async (request, response) => {
 // #route:  POST /register-user
 // #desc:   User sends a request to admin to be registered
 // #access: Private
-router.post('/register-executive', admin, async (request, response) => {
+router.post('/register-executive', middlewares.admin, async (request, response) => {
 
     try {
         const { userName, email } = request.body;

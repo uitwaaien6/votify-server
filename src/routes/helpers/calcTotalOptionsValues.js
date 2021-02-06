@@ -1,14 +1,22 @@
 "use strict";
 
 // calculate total options valutes in a vote by iterating through their values.
-module.exports = function calcTotalOptionsValues(votes) {
+function calcTotalOptionsValues(votes) {
 
-    let totalOptionsValues = 0;
-    const votesProps = Object.getOwnPropertyNames(votes);
+    if (votes) {
 
-    votesProps.forEach((option, index) => {
-        totalOptionsValues += votes[option];
-    });
+        let totalOptionsValues = 0;
+        const votesProps = Object.getOwnPropertyNames(votes);
+    
+        votesProps.forEach((option, index) => {
+            totalOptionsValues += votes[option];
+        });
+    
+        return totalOptionsValues;
+    }
 
-    return totalOptionsValues;
+    throw new Error('votes not provided');
+
 }
+
+module.exports = { calcTotalOptionsValues };
