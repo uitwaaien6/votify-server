@@ -34,8 +34,6 @@ async function checkSessionsLifetime(ttl) {
 
     await Promise.all(sessionDeletions);
 
-    console.log(' ~ Debug: Deleted expired sessions');
-
     } catch (error) {
         console.log(` Error in checkSessionsLifetime.js`, error.message);
     }

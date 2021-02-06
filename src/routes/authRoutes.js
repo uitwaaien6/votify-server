@@ -1,3 +1,4 @@
+"use strict";
 
 // NODE MODULES
 const express = require('express');
@@ -118,6 +119,8 @@ router.post('/login', async (request, response) => {
 
         const { email, password } = request.body;
 
+        const sessions = await Session.find();
+
         if (!email || !password) {
             return response.status(422).json({ error: 'please enter your email and password' });
         }
@@ -160,7 +163,15 @@ router.post('/login', async (request, response) => {
         }
 
         // create a new session uuid
-        sessionUUID = uuid.v4();
+        let sessionUUID = uuid.v4();
+
+        // aviod uuid overlapping but it nearly impossible though
+        sessions.forEach((session, index) => {
+            while (sessionUUID === session.uuid) {
+                sessionUUID = uuid.v4();
+            }
+        });
+
         // create a session property called uuid and give that new session uuid
         request.session.uuid = sessionUUID;
 
@@ -211,7 +222,7 @@ router.get('/logout', async (request, response) => {
 
         await Promise.all([user.save(), Session.deleteOne({ user_id: user._id })]);
 
-        response.json({ success: true });
+        response.json({ success: true, msg: 'Successfully logged out.' });
     } catch (error) {
         return response.status(422).send({ error: error.message });
     }

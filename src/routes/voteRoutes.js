@@ -1,3 +1,4 @@
+"use strict";
 
 // NODE MODULES
 const express = require('express');
@@ -27,12 +28,16 @@ const { sendMail } = require('../mailers/sendMail');
 
 // ROUTES > HELPERS
 const configVoteOptions = require('./helpers/configVoteOptions');
+const calcTotalOptionsValues = require('./helpers/calcTotalOptionsValues');
 
 // CONFIG > EXPIRATION DATES
 const times = require('../../_config/times');
 
 // CONFIG > ROLES
 const roles = require('../../_config/roles');
+
+// CONFIG > VOTES
+const userVotes = require('../../_config/userVotes');
 
 
 // ========= PUBLIC ROUTES =============
@@ -110,10 +115,12 @@ router.get('/votes/:voteId', authentication, async (request, response) => {
 router.post('/make-vote', executive, async (request, response) => {
     try {
         
-        const user = request.user;
         const { voteOption, voteClientId } = request.body;
+        const user = request.user;
 
+        // current vote if it exists
         const vote = await Vote.findOne({ client_id: voteClientId });
+
         const executives = await User.find({ role: roles.EXECUTIVE, is_admin: false, permission: roles.PERMISSION_2 }); // aka voters
 
         if (!vote) {
@@ -128,37 +135,64 @@ router.post('/make-vote', executive, async (request, response) => {
             return response.status(422).json({ error: 'The option you provided is not a valid options array' });
         }
         
-        if (!vote.votes[voteOption]) {
-            return response.status(422).json({ error: 'Option you proivded in votes is invalid property or doesnt match' });
+        if (vote.votes[voteOption] === null || vote.votes[voteOption] === undefined) {
+            return response.status(422).json({ error: 'Option you provided in votes is invalid property or doesnt match' });
         }
 
-        const userVote = user.votes.find((item) => item.vote_id === vote._id);
+        const totalOptionsValues = calcTotalOptionsValues(vote.votes);
 
-        // check if user model includes that vote if it is means that user already votes for that vote.
-        if (userVote) {
+        console.log(` ~ Debug: Total options values`, totalOptionsValues);
+        console.log(` ~ Debug: executives length:`, executives.length);
+
+        // first filter, if the total options values exceeds the executives length means that a user trying to vote again.
+        if ((totalOptionsValues + userVotes.USER_VOTE) > executives.length) { 
+            return response.status(422).json({ error: 'The given vote exceeds the voters length' });
+        }
+
+        // not the best practice, because dont know how to find the ObjectId in document
+        const voteInUser = user.votes.find((item, index) => {
+            if (item.vote_id.toString() === vote._id.toString()) {
+                return item;
+            }
+        });
+
+        // Second filter, check if user model includes that vote if it is means that user already votes for that vote.
+        if (voteInUser) {
             return response.status(422).json({ error: 'You already voted for this vote, Already exist vote in user votes' });
         }
 
-        const voter = vote.voters.find((item, index) => item.user_id === user._id);
-
-        // check if vote model includes that vote if it is means that user already votes for that vote.
-        if (voter) {
-            return response.status(422).json({ error: 'Voter in already vote model, vote has been denied' });
-        }
-
-        let totalOptionsValues = 0;
-
-        const votesProps = Object.getOwnPropertyNames(vote.votes);
-
-        votesProps.forEach((option, index) => {
-            totalOptionsValues += vote.votes[option];
+        // not the best practice, because dont know how to find the ObjectId in document
+        const voteInVote = vote.voters.find((item, index) => {
+            if (item.user_id.toString() === user._id.toString()) {
+                return item;
+            }
         });
 
-        console.log(` ! Debug: Total options values:`, totalOptionsValues);
-
-        if (totalOptionsValues += 1 > executives.length) { 
-            return response.status(422).json({ error: 'The given vote exceeds the voters length' });
+        // check if vote model includes that vote if it is means that user already votes for that vote.
+        if (voteInVote) {
+            return response.status(422).json({ error: 'Voter already in vote model, vote has been denied' });
         }
+
+        // Configure new values for user and vote schema, [votesInUserModel, votesInVoteModel, votersInVoteModel]
+
+        // Create new Array value for user votes
+        const updatedVotesInUser = [...user.votes, { vote_id: vote._id, option: voteOption }];
+
+        // Create new Array alue for voters in vote schema
+        const updatedVotersInVote = [...vote.voters, { user_id: user._id, option: voteOption }];
+
+        // Create new Object value votes in vote schema
+        const updatedVotesInVote = { ...vote.votes };
+        updatedVotes[voteOption] += userVotes.USER_VOTE;
+
+        // Place the new values for User Scehma
+        const updatedUser = User.updateOne({ _id: user._id }, { $set: { votes: updatedVotesInUser } });
+
+        // Place the new values for Vote Schema
+        const updatedVote = Vote.updateOne({ _id: vote._id }, { $set: { votes: updatedVotesInVote, voters: updatedVotersInVote } });
+
+        // save all
+        await Promise.all([updatedUser, updatedVote]);
 
         return response.json({ success: true, msg: 'You have successfully voted', role: user.role  });
 
@@ -190,8 +224,6 @@ router.post('/start-vote', admin, async (request, response) => {
 
         // config the vote options
         const { configedOptions, votes } = configVoteOptions(['evet', 'hayir', 'cekimser'], options);
-
-        console.log(configedOptions);
 
         // TODO MAYBE Remove the options prop and just votes as an object.
 
