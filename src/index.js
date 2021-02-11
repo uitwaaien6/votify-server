@@ -7,6 +7,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
+const path = require('path');
 
 // APPLICATION
 const app = express();
@@ -38,11 +39,15 @@ const voteRoutes = require('./routes/voteRoutes');
 // NODE ENVIRONMENT CONFIG
 const IN_PROD = NODE_ENV === 'production';
 
+app.use(express.static(path.join(__dirname, '../public', 'password-reset')));
+app.use(express.static('../public/password-reset'));
+
 app.use(
     cors({
         credentials: true
     })
 );
+
 app.use(cookieParser());
 
 // APP CONFIG

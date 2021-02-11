@@ -5,6 +5,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const srs = require('secure-random-string');
 const uuid = require('uuid');
+const path = require('path');
 
 // ROUTER
 const router = express.Router();
@@ -199,10 +200,6 @@ router.post('/login', async (request, response) => {
 
         //response.cookie('user_session', sessionUUID, { maxAge: SESSION_LIFETIME, secure: false });
 
-        response.headers = {};
-
-        response.headers['set-cookie'] = request.session;
-
         return response.json({ success: true, msg: 'Successfully logged in', role: user.role });
 
     } catch (error) {
@@ -279,7 +276,7 @@ router.post('/password-reset/send-link', async (request, response) => {
 
         sendMail(emailPackage);
 
-        response.json({ success: true, msg: 'Password reset link has been successfully sent to your email address', _info: `/api/auth/verification/password-reset/reset-password/${user._id}/${password_reset_token}` }); // TODO DELETE INFO PROP
+        response.json({ success: true, msg: 'Password reset link has been successfully sent to your email address' });
     
     } catch (error) {
         console.log(error.message);
@@ -417,11 +414,13 @@ router.get('/api/auth/verification/password-reset/reset-password/:userId/:passwo
 
     try {
 
-        return response.json({ success: true, msg: 'you can create your new password' });
+        // TODO, will create a property like "isInResetFlow" to check the requests for security purposes. A user should only be able to make get request to this route for only one time then expires
+
+        return response.sendFile(path.join(__dirname, '../../public' , 'password-reset', 'index.html'));
     
     } catch (error) {
         console.log(error.message);
-        return response.statue(422).send({ error: error.message });
+        return response.status(422).send({ error: error.message });
     }
 
 });
