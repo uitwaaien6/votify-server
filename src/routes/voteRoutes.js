@@ -161,23 +161,23 @@ router.post('/make-vote', middlewares.executive, async (request, response) => {
         }
 
         // not the best practice, because dont know how to find the ObjectId in document
-        const voteInVote = vote.voters.find((item, index) => {
+        const voterInVote = vote.voters.find((item, index) => {
             if (item.user_id.toString() === user._id.toString()) {
                 return item;
             }
         });
 
         // check if vote model includes that vote if it is means that user already votes for that vote.
-        if (voteInVote) {
+        if (voterInVote) {
             return response.status(422).json({ error: 'Voter already in vote model, vote has been denied' });
         }
 
         // Configure new values for user and vote schema, [votesInUserModel, votesInVoteModel, votersInVoteModel]
 
-        // Create new Array value for user votes
+        // Create a new Array value for votes in user Schema.
         const updatedVotesInUser = [...user.votes, { vote_id: vote._id, option: voteOption }];
 
-        // Create new Array alue for voters in vote schema
+        // Create a new Array alue for voters in vote schema
         const updatedVotersInVote = [...vote.voters, { user_id: user._id, option: voteOption }];
 
         // Create new Object value votes in vote schema

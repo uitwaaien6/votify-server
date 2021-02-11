@@ -22,6 +22,9 @@ const validator = require('../validators/validator'); // general validator
 // MAILERS
 const { sendMail } = require('../mailers/sendMail');
 
+// ENVIRONMENT
+const { SESSION_LIFETIME } = require('../../_config/environment');
+
 // CONFIG > EXPIRATION DATES
 const times = require('../../_config/times');
 
@@ -116,6 +119,8 @@ router.post('/login', async (request, response) => {
     try {
 
         const { email, password } = request.body;
+        console.log(request.session);
+        console.log(request.cookies);
 
         const sessions = await Session.find();
 
@@ -160,6 +165,14 @@ router.post('/login', async (request, response) => {
             return response.status(422).json({ error: 'You must verify your account' });
         }
 
+        
+        const sessionExists = await Session.findOne({ uuid: user.uuid, user_id: user._id });
+
+        if (sessionExists) {
+            return response.status(422).json({ error: 'You are already logged in' });
+        }
+        
+
         // create a new session uuid
         let sessionUUID = uuid.v4();
 
@@ -184,7 +197,13 @@ router.post('/login', async (request, response) => {
         // save user and session to the database
         await Promise.all(promises);
 
-        response.json({ success: true, msg: 'Successfully logged in', role: user.role });
+        //response.cookie('user_session', sessionUUID, { maxAge: SESSION_LIFETIME, secure: false });
+
+        response.headers = {};
+
+        response.headers['set-cookie'] = request.session;
+
+        return response.json({ success: true, msg: 'Successfully logged in', role: user.role });
 
     } catch (error) {
         console.log(error);
@@ -201,6 +220,7 @@ router.get('/logout', async (request, response) => {
     try {
 
         const { uuid } = request.session;
+
         request.session.destroy();
 
         if (!uuid) {

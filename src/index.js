@@ -3,6 +3,7 @@
 // NODE MODULES
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
@@ -37,13 +38,18 @@ const voteRoutes = require('./routes/voteRoutes');
 // NODE ENVIRONMENT CONFIG
 const IN_PROD = NODE_ENV === 'production';
 
+app.use(
+    cors({
+        credentials: true
+    })
+);
 app.use(cookieParser());
 
 // APP CONFIG
-app.use(bodyParser.json({
-    extended: true
-}));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
+// SESSION CONFIG
 app.use(
     session({
         name: SESSION_NAME,
@@ -52,12 +58,12 @@ app.use(
         saveUninitialized: false,
         cookie: {
             maxAge: SESSION_LIFETIME,
-            sameSite: true,
             secure: IN_PROD
         }
     })
 );
 
+// ROUTES
 app.use(authRoutes);
 app.use(voteRoutes);
 
