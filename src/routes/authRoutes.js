@@ -101,6 +101,7 @@ router.post('/register', async (request, response) => {
             subject: 'ESN VOTING EMAIL VERIFICATION LINK',
             text: `UserName: ${user.user_name}`,
             html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
+            // TODO Remove localhost with the real domain address.
         }
 
         sendMail(emailPackage);
@@ -120,8 +121,6 @@ router.post('/login', async (request, response) => {
     try {
 
         const { email, password } = request.body;
-        console.log(request.session);
-        console.log(request.cookies);
 
         const sessions = await Session.find();
 
@@ -159,6 +158,7 @@ router.post('/login', async (request, response) => {
                 subject: 'ESN VOTING EMAIL VERIFICATION LINK',
                 text: `Please verify your email for this UserName: ${user.user_name}`,
                 html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify email</a>`
+                // TODO Remove localhost with the real domain address.
             }
     
             sendMail(emailPackage);
@@ -244,6 +244,31 @@ router.get('/logout', async (request, response) => {
 
 });
 
+// #route:  GET /check-auth-status
+// #desc:   User checks if its still authenticated
+// #access: Public
+router.get('/check-auth-status', middlewares.authentication, async (request, response) => {
+
+    try {
+
+        const user = request.user;
+
+        const { userName, email, role, email_verified } = user;
+
+        const clientUser = {
+            userName,
+            email,
+            role,
+            email_verified
+        }
+        
+        return response.status(200).json({ success: true, msg: 'Successfully Authenticated', user: clientUser });
+    } catch (error) {
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
 
 // #route:  POST /api/auth/verification/password-reset/generate-code
 // #desc:   Generate password reset code for the user and send it through email
@@ -273,6 +298,7 @@ router.post('/password-reset/send-link', async (request, response) => {
             text: `Change your password for this User Name By Clicking the Button Below: ${user.user_name}`,
             html: `<a href="http://localhost:3000/api/auth/verification/password-reset/reset-password/${user._id}/${password_reset_token}">Change Your Password</a>`
         }
+        // TODO Remove localhost with the real domain address.
 
         sendMail(emailPackage);
 
@@ -356,6 +382,7 @@ router.post('/register-executive', middlewares.admin, async (request, response) 
             text: `UserName: ${user.user_name}`,
             html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
         }
+        // TODO Remove localhost with the real domain address.
 
         sendMail(emailPackage);
 

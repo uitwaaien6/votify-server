@@ -30,7 +30,7 @@ async function checkActiveUsers(ttl) {
             const isActive = user.active;
 
             // check the created time as well otherwise it can delete a user who is just registered to the system.
-            if (!isActive && Date.now() > (Date.parse(user.createdAt) + tll)) {
+            if (!isActive && Date.now() > (Date.parse(user.createdAt) + ttl)) {
                 passiveUsers.push(user);
             }
         });
