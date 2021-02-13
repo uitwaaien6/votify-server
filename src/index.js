@@ -40,7 +40,7 @@ const voteRoutes = require('./routes/voteRoutes');
 const IN_PROD = NODE_ENV === 'production';
 
 app.use(express.static(path.join(__dirname, '../public', 'password-reset')));
-app.use(express.static('../public/password-reset'));
+app.use(express.static(path.join(__dirname, '../public', 'email-verified')));
 
 app.use(
     cors({

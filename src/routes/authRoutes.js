@@ -14,6 +14,9 @@ const router = express.Router();
 const User = mongoose.model('User');
 const Session = mongoose.model('Session');
 
+// HELPER
+const { createClient } = require('./helpers/createClient');
+
 // MIDDLEWARES
 const middlewares = require('../middlewares');
 
@@ -166,14 +169,15 @@ router.post('/login', async (request, response) => {
             return response.status(422).json({ error: 'You must verify your account' });
         }
 
-        
+
         const sessionExists = await Session.findOne({ uuid: user.uuid, user_id: user._id });
 
+        // Kill the existing session and will create a new session belove
         if (sessionExists) {
-            return response.status(422).json({ error: 'You are already logged in' });
+            await Session.deleteOne({ uuid: user.uuid });
         }
-        
 
+        
         // create a new session uuid
         let sessionUUID = uuid.v4();
 
@@ -198,9 +202,9 @@ router.post('/login', async (request, response) => {
         // save user and session to the database
         await Promise.all(promises);
 
-        //response.cookie('user_session', sessionUUID, { maxAge: SESSION_LIFETIME, secure: false });
+        const clientUser = createClient(user, ['email_verified', 'role', 'user_name', 'email']);
 
-        return response.json({ success: true, msg: 'Successfully logged in', role: user.role });
+        return response.json({ success: true, msg: 'Successfully logged in', user: clientUser });
 
     } catch (error) {
         console.log(error);
@@ -253,14 +257,9 @@ router.get('/check-auth-status', middlewares.authentication, async (request, res
 
         const user = request.user;
 
-        const { userName, email, role, email_verified } = user;
-
-        const clientUser = {
-            userName,
-            email,
-            role,
-            email_verified
-        }
+        const wantedProps = ['user_name', 'email', 'role', 'email_verified'];
+        
+        const clientUser = createClient(user, wantedProps);
         
         return response.status(200).json({ success: true, msg: 'Successfully Authenticated', user: clientUser });
     } catch (error) {
@@ -427,7 +426,8 @@ router.get('/api/auth/verification/verify-email/:userId/:emailVerificationToken'
         // save user to the database
         await user.save();
 
-        return response.json({ success: true, msg: `Your Email has been verified` });
+        return response.sendFile(path.join(__dirname, '../../public' , 'email-verified', 'index.html'));
+
     } catch (error) {
         return response.status(422).send({ error: error.message });
     }
