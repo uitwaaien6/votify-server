@@ -30,7 +30,7 @@ function validatePassword(password) {
         .has().lowercase()                              // Must have lowercase letters
         .has().digits(2)                                // Must have at least 2 digits
         .has().not().spaces()                           // Should not have spaces
-        .is().not().oneOf(['Passw0rd', 'Password123']); // Blacklist these values
+        .is().not().oneOf(['Passw0rd', 'Password123', '12345678']); // Blacklist these values
     
         if (!passwordSchema.validate(password)) {
             console.log(chalk.red(` ! Password is invalid`));

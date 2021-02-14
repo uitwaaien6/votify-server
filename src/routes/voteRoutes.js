@@ -18,7 +18,7 @@ const Vote = mongoose.model('Vote');
 const middlewares = require('../middlewares');
 
 // VALIDATORS
-const validator = require('../validators/validator'); // general validator
+const validator = require('../validators/authValidators'); // general validator
 
 // MAILERS
 const { sendMail } = require('../mailers/sendMail');

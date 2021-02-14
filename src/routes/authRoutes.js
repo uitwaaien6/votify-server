@@ -21,7 +21,7 @@ const { createClient } = require('./helpers/createClient');
 const middlewares = require('../middlewares');
 
 // VALIDATORS
-const validator = require('../validators/validator'); // general validator
+const authValidators = require('../validators/authValidators'); // general validator
 
 // MAILERS
 const { sendMail } = require('../mailers/sendMail');
@@ -69,11 +69,11 @@ router.post('/register', async (request, response) => {
 
         }
 
-        if (!validator.validateEmail(email)) {
+        if (!authValidators.validateEmail(email)) {
             return response.status(422).send({ error: 'Email is not valid' });
         }
 
-        if (!validator.validatePassword(password)) {
+        if (!authValidators.validatePassword(password)) {
             return response.status(422).send({ error: 'password is invalid, please choose proper password' });
         }
 
@@ -81,7 +81,7 @@ router.post('/register', async (request, response) => {
             return response.status(422).send({ error: 'password you entered is not matched' });
         }
 
-        if (userName.includes(' ')) {
+        if (userName.includes(' ') || userName.length > 40) {
             return response.status(422).send({ error: 'invalid username' });
         }
 
@@ -317,16 +317,52 @@ router.post('/password-reset/send-link', async (request, response) => {
 // #route:  POST /register-user
 // #desc:   User sends a request to admin to be registered
 // #access: Private
-router.get('/register-user', middlewares.admin, async (request, response) => {
+router.post('/register-user', middlewares.admin, async (request, response) => {
 
     try {
 
-        const { uuid } = request.session;
-        const user = await User.findOne({ uuid });
+        const { userName, email } = request.body;
 
-        if (!user) {
-            return response.status(422).send({ error: 'user with the given uuid is doesnt exist in /register-user' });
+        if (!userName || !email) {
+            return response.status(422).json({ error: 'Admin has to provide email and user name of the executive' });
         }
+
+        if (!authValidators.validateEmail(email)) {
+            return response.status(422).send({ error: 'Email is not valid' });
+        }
+
+        if (userName.includes(' ') || userName.length > 40) {
+            return response.status(422).json({ error: 'Please enter a valid username' });
+        }
+
+        const email_verification_token = srs({ length: 128 });
+        const email_verification_token_expiration_date = Date.now() + times.ONE_HOUR;
+
+        const temporaryPassword = srs({ length: 9 });
+
+        const user = new User({ 
+            user_name: userName, 
+            email, 
+            password: temporaryPassword,
+            role: roles.USER,
+            permission: roles.PERMISSION_3,
+            active: true,
+            email_verification_token, 
+            email_verification_token_expiration_date
+        });
+
+        await user.save();
+
+        const emailPackage = {
+            from: 'no-reply@voteapp.com',
+            to: email,
+            subject: 'ESN VOTING EMAIL VERIFICATION LINK',
+            text: `UserName: ${user.user_name}`,
+            html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
+        }
+        // TODO Remove localhost with the real domain address.
+
+        sendMail(emailPackage);
 
         return response.json({ success: true, msg: 'Register user page' });
     } catch (error) {
@@ -348,7 +384,7 @@ router.post('/register-executive', middlewares.admin, async (request, response) 
             return response.status(422).json({ error: 'Admin has to provide email and user name of the executive' });
         }
 
-        if (!validator.validateEmail(email)) {
+        if (!authValidators.validateEmail(email)) {
             return response.status(422).send({ error: 'Email is not valid' });
         }
 
@@ -485,7 +521,7 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
             return response.status(422).send({ error: 'passwords doesnt match' });
         }
 
-        if (!validator.validatePassword(password)) {
+        if (!authValidators.validatePassword(password)) {
             return response.status(422).send({ error: 'password you provided is invalid' });
         }
 
