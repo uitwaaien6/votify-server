@@ -27,6 +27,11 @@ async function checkIllegalVotes() {
         const executives = await User.find({ role: roles.EXECUTIVE, is_admin: false, permission: roles.PERMISSION_2 }); // aka voters
 
         const dbVotes = await Vote.find();
+
+        if (!dbVotes || !executives) {
+            return console.log(chalk.red('No Database Votes or Executives found'));
+        }
+
         const currentVotes = dbVotes.map((dbVote, index) => {
             return { _id: dbVote._id, votes: dbVote.votes, voters: dbVote.voters };
         });

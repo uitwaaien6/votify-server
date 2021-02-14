@@ -22,7 +22,12 @@ function createClient(obj, props) {
 
         const clientProp = propArr[0] + (propArr[1] ? makeFirstUpper(propArr[1]) : '');
 
-        clientObj[clientProp] = obj[item];
+        if (obj[item]) {
+            clientObj[clientProp] = obj[item];
+        } else {
+            return;
+        }
+
     });
 
 }

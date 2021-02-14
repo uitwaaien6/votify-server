@@ -12,8 +12,10 @@ const path = require('path');
 // APPLICATION
 const app = express();
 
-// CONFIG
+// CONFIG > DB CONNECTION
 require('../_config/dbConnection');
+
+// CONFIG > ENVIRONMENTS
 const {
     PORT,
     NODE_ENV,
@@ -28,9 +30,9 @@ require('./models/SessionModel');
 require('./models/VoteModel');
 
 // TIMERS
-require('./timers/checkSessionsLifetime');
-require('./timers/checkActiveUsers');
-require('./timers/checkIllegalVotes');
+require('./supervisions/checkSessionsLifetime');
+require('./supervisions/checkActiveUsers');
+require('./supervisions/checkIllegalVotes');
 
 // ROUTES
 const authRoutes = require('./routes/authRoutes');
@@ -39,6 +41,7 @@ const voteRoutes = require('./routes/voteRoutes');
 // NODE ENVIRONMENT CONFIG
 const IN_PROD = NODE_ENV === 'production';
 
+// HTML SERVINGS
 app.use(express.static(path.join(__dirname, '../public', 'password-reset')));
 app.use(express.static(path.join(__dirname, '../public', 'email-verified')));
 
@@ -73,4 +76,18 @@ app.use(authRoutes);
 app.use(voteRoutes);
 
 // LISTEN
-app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+app.listen(PORT, (err) => {
+    if (err) {
+        return process.exit(1);
+    }
+
+    console.log(
+        `
+            ########################################
+
+                    Listening on port ${PORT}
+
+            ########################################
+        `
+    );
+});

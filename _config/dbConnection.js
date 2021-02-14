@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 // CONFIG
 const { DB_PASSWORD } = require('./environment');
 
+// dbConnection
 const mongoURI = `mongodb+srv://admin:${DB_PASSWORD}@cluster0.w13i5.mongodb.net/voteapp?retryWrites=true&w=majority
 `;
 

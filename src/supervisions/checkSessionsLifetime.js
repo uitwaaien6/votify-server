@@ -1,6 +1,7 @@
 
 // NODE MODULES
 const mongoose = require('mongoose');
+const chalk = require('chalk');
 
 // MODELS
 const Session = mongoose.model('Session');
@@ -14,6 +15,11 @@ async function checkSessionsLifetime(ttl) {
     try {
         
     const sessions = await Session.find();
+
+    if (!sessions) {
+        return console.log(chalk.red('No Sessions found or Couldnt connect to database'))
+    }
+
     const endedSessions = [];
     const sessionDeletions = [];
 

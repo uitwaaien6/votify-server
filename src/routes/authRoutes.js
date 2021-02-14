@@ -502,13 +502,13 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
         const emailPackage = {
             from: 'no-reply@voteapp.com',
             to: user.email,
-            subject: 'ESN VOTING PASSWORD HAS CHANGED',
+            subject: 'VOTIFY ACCOUNT PASSWORD HAS CHANGED',
             text: `${user.user_name}, this users password has been changed.`
         }
 
         sendMail(emailPackage);
 
-        response.json({ success: true, msg: 'Password has been successfully changed' });
+        return response.json({ success: true, msg: 'Password has been successfully changed' });
     
     } catch (error) {
         console.log(error.message);
