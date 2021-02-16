@@ -52,7 +52,7 @@ async function checkIllegalVotes() {
         });
 
         illegalVotes.forEach((illegalVote, index) => {
-            votesDeletions.push(Vote.deletOne({ _id: illegalVote._id }))
+            votesDeletions.push(Vote.deleteOne({ _id: illegalVote._id }));
         });
 
         await Promise.all(votesDeletions);

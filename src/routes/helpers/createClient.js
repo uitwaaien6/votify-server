@@ -20,15 +20,15 @@ function createClient(obj, props) {
 
         const propArr = item.split('_');
 
-        const clientProp = propArr[0] + (propArr[1] ? makeFirstUpper(propArr[1]) : '');
+        const clientProp = (propArr[0] + (propArr[1] ? makeFirstUpper(propArr[1]) : ''));
 
         if (obj[item]) {
             clientObj[clientProp] = obj[item];
-        } else {
-            return;
         }
 
     });
+
+    return clientObj;
 
 }
 

@@ -40,6 +40,14 @@ const userSchema = mongoose.Schema({
         type: Date,
         default: null
     },
+    email_reset_token: {
+        type: String,
+        default: null
+    },
+    email_reset_token_expiration_date: {
+        type: Date,
+        default: null
+    },
     password: {
         type: String,
         required: true

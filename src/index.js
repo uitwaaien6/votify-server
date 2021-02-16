@@ -43,6 +43,7 @@ const IN_PROD = NODE_ENV === 'production';
 
 // HTML SERVINGS
 app.use(express.static(path.join(__dirname, '../public', 'password-reset')));
+app.use(express.static(path.join(__dirname, '../public', 'email-reset')));
 app.use(express.static(path.join(__dirname, '../public', 'email-verified')));
 
 app.use(

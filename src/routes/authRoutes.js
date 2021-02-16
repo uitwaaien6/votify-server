@@ -99,9 +99,9 @@ router.post('/register', async (request, response) => {
         await user.save();
 
         const emailPackage = {
-            from: 'no-reply@voteapp.com',
+            from: 'no-reply@votify.com',
             to: email,
-            subject: 'ESN VOTING EMAIL VERIFICATION LINK',
+            subject: 'VOTIFY EMAIL VERIFICATION LINK',
             text: `UserName: ${user.user_name}`,
             html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
             // TODO Remove localhost with the real domain address.
@@ -156,9 +156,9 @@ router.post('/login', async (request, response) => {
             await user.save();
 
             const emailPackage = {
-                from: 'no-reply@voteapp.com',
+                from: 'no-reply@votify.com',
                 to: email,
-                subject: 'ESN VOTING EMAIL VERIFICATION LINK',
+                subject: 'VOTIFY EMAIL VERIFICATION LINK',
                 text: `Please verify your email for this UserName: ${user.user_name}`,
                 html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify email</a>`
                 // TODO Remove localhost with the real domain address.
@@ -169,7 +169,7 @@ router.post('/login', async (request, response) => {
             return response.status(422).json({ error: 'You must verify your account' });
         }
 
-
+        // TODO Might delete the sessionExists, just delete because deleteOne function will delete if it exists we dont have to check if there are any existing session
         const sessionExists = await Session.findOne({ uuid: user.uuid, user_id: user._id });
 
         // Kill the existing session and will create a new session belove
@@ -177,7 +177,6 @@ router.post('/login', async (request, response) => {
             await Session.deleteOne({ uuid: user.uuid });
         }
 
-        
         // create a new session uuid
         let sessionUUID = uuid.v4();
 
@@ -203,6 +202,8 @@ router.post('/login', async (request, response) => {
         await Promise.all(promises);
 
         const clientUser = createClient(user, ['email_verified', 'role', 'user_name', 'email']);
+
+        console.log(clientUser);
 
         return response.json({ success: true, msg: 'Successfully logged in', user: clientUser });
 
@@ -235,13 +236,10 @@ router.get('/logout', async (request, response) => {
         }
 
         user.uuid = null;
-        //await user.save();
-
-        //await Session.deleteOne({ userId: user._id });
 
         await Promise.all([user.save(), Session.deleteOne({ user_id: user._id })]);
 
-        response.json({ success: true, msg: 'Successfully logged out.' });
+        return response.json({ success: true, msg: 'Successfully logged out.' });
     } catch (error) {
         return response.status(422).send({ error: error.message });
     }
@@ -291,9 +289,9 @@ router.post('/password-reset/send-link', async (request, response) => {
         await user.save();
 
         const emailPackage = {
-            from: 'no-reply@voteapp.com',
+            from: 'no-reply@votify.com',
             to: email,
-            subject: 'ESN VOTING PASSWORD RESET LINK',
+            subject: 'VOTIFY PASSWORD RESET LINK',
             text: `Change your password for this User Name By Clicking the Button Below: ${user.user_name}`,
             html: `<a href="http://localhost:3000/api/auth/verification/password-reset/reset-password/${user._id}/${password_reset_token}">Change Your Password</a>`
         }
@@ -301,7 +299,49 @@ router.post('/password-reset/send-link', async (request, response) => {
 
         sendMail(emailPackage);
 
-        response.json({ success: true, msg: 'Password reset link has been successfully sent to your email address' });
+        return response.json({ success: true, msg: 'Password reset link has been successfully sent to your email address' });
+    
+    } catch (error) {
+        console.log(error.message);
+        return response.statue(422).send({ error: error.message });
+    }
+
+});
+
+
+// #route:  POST /api/auth/verification/password-reset/generate-code
+// #desc:   Generate password reset code for the user and send it through email
+// #access: Public
+router.post('/email-reset/send-link', async (request, response) => {
+
+    try {
+        const { email } = request.body;
+        const user = await User.findOne({ email });
+    
+        if (!user) {
+            return response.status(422).send({ error: 'User with given email is not found' });
+        }
+
+        const email_reset_token = srs({ length: 128 });
+        const email_reset_token_expiration_date = Date.now() + times.ONE_MIN * 30;
+    
+        user.email_reset_token = email_reset_token;
+        user.email_reset_token_expiration_date = email_reset_token_expiration_date
+
+        await user.save();
+
+        const emailPackage = {
+            from: 'no-reply@votify.com',
+            to: email,
+            subject: 'VOTIFY EMAIL RESET LINK',
+            text: `Change your Email for this User Name By Clicking the Button Below: ${user.user_name}`,
+            html: `<a href="http://localhost:3000/api/auth/verification/email-reset/reset-email/${user._id}/${email_reset_token}">Change Your Email</a>`
+        }
+        // TODO Remove localhost with the real domain address.
+
+        sendMail(emailPackage);
+
+        return response.json({ success: true, msg: 'Email reset link has been successfully sent to your email address' });
     
     } catch (error) {
         console.log(error.message);
@@ -354,9 +394,9 @@ router.post('/register-user', middlewares.admin, async (request, response) => {
         await user.save();
 
         const emailPackage = {
-            from: 'no-reply@voteapp.com',
+            from: 'no-reply@votify.com',
             to: email,
-            subject: 'ESN VOTING EMAIL VERIFICATION LINK',
+            subject: 'VOTFY EMAIL VERIFICATION LINK',
             text: `UserName: ${user.user_name}`,
             html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
         }
@@ -411,9 +451,9 @@ router.post('/register-executive', middlewares.admin, async (request, response) 
         await user.save();
 
         const emailPackage = {
-            from: 'no-reply@voteapp.com',
+            from: 'no-reply@votify.com',
             to: email,
-            subject: 'ESN VOTING EMAIL VERIFICATION LINK',
+            subject: 'VOTIFY EMAIL VERIFICATION LINK',
             text: `UserName: ${user.user_name}`,
             html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
         }
@@ -448,7 +488,7 @@ router.get('/api/auth/verification/verify-email/:userId/:emailVerificationToken'
         }
         
         if (Date.now() > user.email_verification_token_expiration_date || Date.now() > (Date.parse(user.email_verification_token_expiration_date))) {
-            return response.status(422).send({ error: 'Something went wrong' });
+            return response.status(422).send({ error: 'Email verification link expired' });
         }
 
         if (user.email_verification_token !== emailVerificationToken) {
@@ -456,8 +496,8 @@ router.get('/api/auth/verification/verify-email/:userId/:emailVerificationToken'
         }
 
         user.email_verified = true;
-        user.email_verification_token = undefined;
-        user.email_verification_token_expiration_date = undefined;
+        user.email_verification_token = null;
+        user.email_verification_token_expiration_date = null;
 
         // save user to the database
         await user.save();
@@ -505,6 +545,10 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
             return response.status(422).send({ error: 'User with the given id doesnt exist' });
         }
 
+        if (!userId || !passwordResetToken) {
+            return response.status(422).json({ error: 'user id or password reset token is not provided' });
+        }
+
         if (user.password_reset_token !== passwordResetToken) {
             return response.status(422).send({ error: 'password reset token authentication failed' });
         }
@@ -531,12 +575,12 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
 
         // delete current working session if there is any, because user changed the password
 
-        await Session.deleteMany({ user_id: user._id });
+        const promises = [user.save(), Session.deleteMany({ user_id: user._id })];
 
-        await user.save();
+        await Promise.all(promises);
 
         const emailPackage = {
-            from: 'no-reply@voteapp.com',
+            from: 'no-reply@votify.com',
             to: user.email,
             subject: 'VOTIFY ACCOUNT PASSWORD HAS CHANGED',
             text: `${user.user_name}, this users password has been changed.`
@@ -552,5 +596,115 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
     }
 
 });
+
+// #route:  POST /api/auth/verification/password-reset/reset-password/:userId/:emailResetToken
+// #desc:   Take new email to change it
+// #access: Private
+router.get('/api/auth/verification/email-reset/reset-email/:userId/:emailResetToken', async (request, response) => {
+
+    try {
+        
+        return response.sendFile(path.join(__dirname, '../../public' , 'email-reset', 'index.html'));
+    
+    } catch (error) {
+        console.log(error.message);
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
+
+// #route:  POST /api/auth/verification/password-reset/reset-password/:userId/:emailResetToken
+// #desc:   Take new email to change it
+// #access: Private
+router.post('/api/auth/verification/email-reset/reset-email/:userId/:emailResetToken', async (request, response) => {
+
+    try {
+
+        const { newEmail } = request.body;
+
+        const { userId, emailResetToken } = request.params;
+
+        const user = await User.findOne({ _id: userId });
+        const existingUser = await User.findOne({ email: newEmail });
+
+        if (existingUser) {
+            return response.status(422).json({ error: 'Given email is already in use' });
+        }
+
+        if (!user) {
+            return response.status(422).send({ error: 'User with the given id doesnt exist' });
+        }
+
+        const currentEmail = user.email;
+
+        if (user.email === newEmail) {
+            return response.status(422).json({ error: 'Given email is same with your current email' });
+        }
+
+        if (!newEmail) {
+            return response.status(422).send({ error: 'password are not provided' });
+        }
+        
+        if (!userId || !emailResetToken) {
+            return response.status(422).json({ error: 'user id or email reset token is not provided' });
+        }
+
+        if (user.email_reset_token !== emailResetToken || !emailResetToken.includes(user.email_reset_token)) {
+            return response.status(422).send({ error: 'Email reset token authentication failed' });
+        }
+
+        if (Date.now() > user.email_reset_token_expiration_date || Date.now() > (Date.parse(user.email_reset_token_expiration_date))) {
+            return response.status(422).send({ error: 'password reset token expiration date has passed' });
+        }
+
+        if (!authValidators.validateEmail(newEmail)) {
+            return response.status(422).send({ error: 'password you provided is invalid' });
+        }
+
+        // set new email and kill email reset token 
+        user.email = newEmail;
+        user.email_reset_token = null;
+        user.email_reset_token_expiration_date = null;
+
+        // current users email verified is false because changed
+        user.email_verified = false;
+
+        // set new email verification token for user to verify their new email
+        const email_verification_token = srs({ length: 128 });
+        const email_verification_token_expiration_date = Date.now() + times.ONE_MIN * 30;
+
+        user.email_verification_token = email_verification_token;
+        user.email_verification_token_expiration_date = email_verification_token_expiration_date;
+
+        // delete current working session if there is any, because user changed the email, this is important
+
+        const promises = [user.save(), Session.deleteMany({ user_id: user._id }), Session.deleteOne({ user_id: user._id })];
+
+        await Promise.all(promises);
+
+        sendMail({
+            from: 'no-reply@votify.com',
+            to: newEmail,
+            subject: 'VERIFY YOUR NEW EMAIL',
+            html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
+        });
+
+        sendMail({
+            from: 'no-reply@votify.com',
+            to: currentEmail,
+            subject: 'VOTIFY EMAIL CHANGED',
+            text: `${user.user_name}, this users email has been changed.`
+        });
+
+        return response.json({ success: true, msg: 'Email has been successfully changed' });
+    
+    } catch (error) {
+        console.log(error.message);
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
 
 module.exports = router;
