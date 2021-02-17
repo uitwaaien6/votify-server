@@ -239,4 +239,48 @@ router.post('/start-vote', middlewares.admin, async (request, response) => {
     }
 });
 
+// #route:  POST /delete-vote
+// #desc:   Admin creates a new vote
+// #access: Private
+router.post('/start-vote', middlewares.admin, async (request, response) => {
+    try {
+        
+        const { title, options } = request.body;
+        const user = request.user;
+
+        if (!title || title === ' ') {
+            return response.status(422).json({ error: 'Title or options are not provided' });
+        }
+
+        // auto increment >
+        // get the votes from database
+        const dbVotes = await Vote.find();
+        // extract the client ids of the votes and put them in array
+        const clientIds = dbVotes.map((vote, index) => vote.client_id);
+        // sort them by order reverse them and add 1 to the first one.
+        const clientId = clientIds?.sort().reverse()[0] + 1;
+
+        // config the vote options
+        const { configedOptions, votes } = configVoteOptions(['evet', 'hayir', 'cekimser'], options);
+
+        // TODO MAYBE Remove the options prop and just votes as an object.
+
+        const vote = new Vote({
+            user_id: user._id,
+            client_id: clientId ? clientId : 1, // put it 1 if there is not any for initial.
+            title,
+            votes,
+            options: configedOptions
+        });
+
+        await vote.save();
+
+        return response.json({ success: true, msg: 'A new vote has been successfully started' });
+
+    } catch (error) {
+        console.log(` ! Error in voteRoutes.js`, error.message);
+        return response.status(422).json({ error: error.message });
+    }
+});
+
 module.exports = router;

@@ -744,3 +744,4 @@ module.exports = router;
 
 
 // url de birden fazla uuid mimarisi each uuid baska bir objeyi temsil ediyo
+
