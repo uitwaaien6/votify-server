@@ -12,7 +12,7 @@ function checkUUID(request, response, uuid) {
 
         try {
             if (!uuid) {
-                return response.status(422).json({ error: 'Your are not authenticated' });
+                return response.status(422).json({ error: 'Please login first' });
             }
         
             const user = await User.findOne({ uuid });
@@ -24,7 +24,7 @@ function checkUUID(request, response, uuid) {
             const session = await  Session.findOne({ uuid });
         
             if (!session) {
-                return response.status(422).json({ error: 'session with the given uuid doesnt exist' });
+                return response.status(422).json({ error: 'Session is expired, please login' });
             }
         
             await session.save();

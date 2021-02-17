@@ -42,9 +42,11 @@ const voteRoutes = require('./routes/voteRoutes');
 const IN_PROD = NODE_ENV === 'production';
 
 // HTML SERVINGS
-app.use(express.static(path.join(__dirname, '../public', 'password-reset')));
+// TODO Will create a weclome page to avoid exposing email reset or password reset pages, it will use the first line that comes from express static by default
 app.use(express.static(path.join(__dirname, '../public', 'email-reset')));
+app.use(express.static(path.join(__dirname, '../public', 'password-reset')));
 app.use(express.static(path.join(__dirname, '../public', 'email-verified')));
+app.use(express.static(path.join(__dirname, '../public', 'error-page')));
 
 app.use(
     cors({

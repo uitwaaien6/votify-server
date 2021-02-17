@@ -203,8 +203,6 @@ router.post('/login', async (request, response) => {
 
         const clientUser = createClient(user, ['email_verified', 'role', 'user_name', 'email']);
 
-        console.log(clientUser);
-
         return response.json({ success: true, msg: 'Successfully logged in', user: clientUser });
 
     } catch (error) {
@@ -261,7 +259,7 @@ router.get('/check-auth-status', middlewares.authentication, async (request, res
         
         return response.status(200).json({ success: true, msg: 'Successfully Authenticated', user: clientUser });
     } catch (error) {
-        return response.status(422).send({ error: error.message });
+        return response.status(422).send({ error: 'Error while checking auth status' });
     }
 
 });
@@ -515,15 +513,31 @@ router.get('/api/auth/verification/verify-email/:userId/:emailVerificationToken'
 // #access: Private
 router.get('/api/auth/verification/password-reset/reset-password/:userId/:passwordResetToken', async (request, response) => {
 
-    try {
+    try {        
+        
+        const { userId, passwordResetToken } = request.params;
+        const user = await User.findOne({ _id: userId });
 
-        // TODO, will create a property like "isInResetFlow" to check the requests for security purposes. A user should only be able to make get request to this route for only one time then expires
+        if (!user) {
+            return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
+        }
+
+        if (!userId || !passwordResetToken) {
+            return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
+        }
+
+        if (user.password_reset_token !== passwordResetToken) {
+            return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
+        }
+
+        if (Date.now() > user.password_reset_token_expiration_date || Date.now() > (Date.parse(user.password_reset_token_expiration_date))) {
+            return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
+        }
 
         return response.sendFile(path.join(__dirname, '../../public' , 'password-reset', 'index.html'));
     
     } catch (error) {
-        console.log(error.message);
-        return response.status(422).send({ error: error.message });
+        return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
     }
 
 });
@@ -603,12 +617,31 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
 router.get('/api/auth/verification/email-reset/reset-email/:userId/:emailResetToken', async (request, response) => {
 
     try {
+
+        const { userId, emailResetToken } = request.params;
+
+        const user = await User.findOne({ _id: userId });
+
+        if (!user) {
+            return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
+        }
+        
+        if (!userId || !emailResetToken) {
+            return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
+        }
+
+        if (user.email_reset_token !== emailResetToken || !emailResetToken.includes(user.email_reset_token)) {
+            return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
+        }
+
+        if (Date.now() > user.email_reset_token_expiration_date || Date.now() > (Date.parse(user.email_reset_token_expiration_date))) {
+            return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
+        }
         
         return response.sendFile(path.join(__dirname, '../../public' , 'email-reset', 'index.html'));
     
     } catch (error) {
-        console.log(error.message);
-        return response.status(422).send({ error: error.message });
+        return response.sendFile(path.join(__dirname, '../../public' , 'error-page', 'index.html'));
     }
 
 });
@@ -659,7 +692,7 @@ router.post('/api/auth/verification/email-reset/reset-email/:userId/:emailResetT
         }
 
         if (!authValidators.validateEmail(newEmail)) {
-            return response.status(422).send({ error: 'password you provided is invalid' });
+            return response.status(422).send({ error: 'email you provided is invalid' });
         }
 
         // set new email and kill email reset token 
@@ -708,3 +741,6 @@ router.post('/api/auth/verification/email-reset/reset-email/:userId/:emailResetT
 
 
 module.exports = router;
+
+
+// url de birden fazla uuid mimarisi each uuid baska bir objeyi temsil ediyo

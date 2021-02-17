@@ -26,6 +26,7 @@ const { sendMail } = require('../mailers/sendMail');
 // ROUTES > HELPERS
 const { configVoteOptions } = require('./helpers/configVoteOptions');
 const { calcTotalOptionsValues } = require('./helpers/calcTotalOptionsValues');
+const { createClient } = require('./helpers/createClient');
 
 // TIMERS
 //const { checkIllegalVotes } = require('../timers/checkIllegalVotes'); TODO, exporting and also calling function overlapping setInterval with every make-vote request
@@ -56,23 +57,19 @@ router.get('/votes', middlewares.authentication, async (request, response) => {
         const votes = await Vote.find();
         const user = request.user;
 
-        console.log(user);
-
         if (!votes) {
             return response.status(422).json({ error: 'Votes doesnt exist' });
         }
 
-        const votesForClient = votes.map((vote, index) => {
+        const clientVotes = votes.map((vote, index) => {
             if (vote.active) {
-                return {
-                    title: vote.title,
-                    options: vote.options,
-                    client_id: vote.client_id
-                }
+                return createClient(vote, ['title', 'options', 'client_id']);
             }
         });
 
-        return response.json({ success: true, msg: 'You have successfully get the votes', votes: votesForClient, role: user.role });
+        const clientUser = createClient(user, ['email', 'role', 'user_name']);
+
+        return response.json({ success: true, msg: 'You have successfully get the votes', votes: clientVotes, user: clientUser });
 
     } catch (error) {
         console.log(` ! Error in voteRoutes.js`, error.message);
@@ -95,16 +92,14 @@ router.get('/votes/:voteId', middlewares.authentication, async (request, respons
         }
 
         if (!vote.active) {
-            return response.status(422).json({ error: 'The Vote you are looking for is inactive or admin shutdown' });
+            return response.status(422).json({ error: 'The Vote you are looking for is inactive or has been shutdown by admin' });
         }
 
-        const votesForClient = { // getting rid of every other properties especially _id for security purposes, leaving only basics and essentials
-            title: vote.title,
-            options: vote.options,
-            client_id: vote.client_id
-        }
+        const clientVote = createClient(vote, ['title', 'options', 'client_id']);
 
-        return response.json({ success: true, msg: 'You have successfully voted', vote: votesForClient, role: user.role  });
+        const clientUser = createClient(user, ['email', 'role', 'user_name']);
+
+        return response.json({ success: true, msg: 'You have successfully voted', vote: clientVote, user: clientUser  });
 
     } catch (error) {
         console.log(` ! Error in voteRoutes.js`, error.message);
