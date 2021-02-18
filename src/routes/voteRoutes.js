@@ -215,10 +215,18 @@ router.post('/start-vote', middlewares.admin, async (request, response) => {
         // auto increment >
         // get the votes from database
         const dbVotes = await Vote.find();
-        // extract the client ids of the votes and put them in array
-        const clientIds = dbVotes.map((vote, index) => vote.client_id);
-        // sort them by order reverse them and add 1 to the first one.
-        const clientId = clientIds?.sort().reverse()[0] + 1;
+
+        let clientIds = [];
+        let clientId = 0;
+
+        if (dbVotes.length > 0) {
+            // extract the client ids of the votes and put them in array
+            clientIds = dbVotes.map((vote, index) => vote.client_id);
+            // sort them by order reverse them and add 1 to the first one.
+            clientId = clientIds?.sort((a, b) => a - b).reverse()[0] + 1;
+        } else {
+            clientId = 1;
+        }
 
         // config the vote options
         const { configedOptions, votes } = configVoteOptions(['evet', 'hayir', 'cekimser'], options);
