@@ -212,8 +212,6 @@ router.post('/start-vote', middlewares.admin, async (request, response) => {
             return response.status(422).json({ error: 'Title is not provided' });
         }
 
-        console.log(options);
-
         if (options && options.length > 10) {
             return response.status(422).json({ error: 'Number of options cant be above 10' });
         }

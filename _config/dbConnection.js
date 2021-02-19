@@ -5,9 +5,9 @@ const mongoose = require('mongoose');
 const { DB_PASSWORD } = require('./environment');
 
 // dbConnection
-const mongoURI = `mongodb+srv://admin:${DB_PASSWORD}@cluster0.gxk6o.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const mongoURL = `mongodb+srv://admin:${DB_PASSWORD}@cluster0.gxk6o.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 
-mongoose.connect(mongoURI, {
+mongoose.connect(mongoURL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true
