@@ -209,7 +209,11 @@ router.post('/start-vote', middlewares.admin, async (request, response) => {
         const user = request.user;
 
         if (!title || title === ' ') {
-            return response.status(422).json({ error: 'Title or options are not provided' });
+            return response.status(422).json({ error: 'Title is not provided' });
+        }
+
+        if (options && options.length > 10) {
+            return response.status(422).json({ error: 'Number of options cant be above 10' });
         }
 
         // auto increment >
@@ -229,7 +233,7 @@ router.post('/start-vote', middlewares.admin, async (request, response) => {
         }
 
         // config the vote options
-        const { configedOptions, votes } = configVoteOptions(['evet', 'hayir', 'cekimser'], options);
+        const { configedOptions, votes } = configVoteOptions(userVotes.DEFAULT_VOTE_OPTIONS, options);
 
         // TODO MAYBE Remove the options prop and just votes as an object.
 

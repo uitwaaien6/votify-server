@@ -41,8 +41,9 @@ const voteRoutes = require('./routes/voteRoutes');
 // NODE ENVIRONMENT CONFIG
 const IN_PROD = NODE_ENV === 'production';
 
+
 // HTML SERVINGS
-// TODO Will create a weclome page to avoid exposing email reset or password reset pages, it will use the first line that comes from express static by default
+// TODO Will create a welcome page to avoid exposing email reset or password reset pages, it will use the first line that comes from express static by default
 app.use(express.static(path.join(__dirname, '../public', 'email-reset')));
 app.use(express.static(path.join(__dirname, '../public', 'password-reset')));
 app.use(express.static(path.join(__dirname, '../public', 'email-verified')));

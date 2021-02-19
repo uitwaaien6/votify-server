@@ -29,7 +29,6 @@ const { sendMail } = require('../mailers/sendMail');
 // ENVIRONMENT
 const { SESSION_LIFETIME } = require('../../_config/environment');
 
-
 // CONFIG > EXPIRATION DATES
 const times = require('../../_config/times');
 
