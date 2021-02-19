@@ -18,29 +18,23 @@ function configVoteOptions(defaultOptionsValues, options) {
 
         options.forEach((option, index) => {
 
-            if (option.includes(' ')) {
+            const spaceSeperatedOption = option.split(' ');
+            const emptyStrCleanedOption = [];
 
-                let emptyStrCleanedOption = [];
-                const spaceSeperatedOption = option.split(' ');
-    
-                spaceSeperatedOption.forEach((spaceSeperatedOptionItem) => {
-
-                    if (spaceSeperatedOptionItem) {
-                        emptyStrCleanedOption.push(spaceSeperatedOptionItem);
-                    }
-
-                });
-    
-                const finalizedOption = emptyStrCleanedOption.join(' ');
-
-                if (finalizedOption) {
-
-                    configedOptions.push(finalizedOption);
-                    votes[finalizedOption] = 0;
+            spaceSeperatedOption.forEach((spaceSeperatedOptionItem) => {
+                
+                if (spaceSeperatedOptionItem) {
+                    emptyStrCleanedOption.push(spaceSeperatedOptionItem);
                 }
 
-            } else {
-                votes[option] = 0;
+            });
+
+            const finalizedOption = emptyStrCleanedOption.join(' ');
+
+            if (finalizedOption) {
+
+                configedOptions.push(finalizedOption);
+                votes[finalizedOption] = 0;
             }
 
         });
