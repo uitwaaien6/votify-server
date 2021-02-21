@@ -418,6 +418,7 @@ router.post('/register-user', middlewares.admin, async (request, response) => {
 // #route:  POST /register-user
 // #desc:   User sends a request to admin to be registered
 // #access: Private
+
 router.post('/register-executive', middlewares.admin, async (request, response) => {
 
     try {
