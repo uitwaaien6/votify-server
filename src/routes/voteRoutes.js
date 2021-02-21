@@ -88,11 +88,10 @@ router.get('/votes/:voteId', middlewares.authentication, async (request, respons
     try {
         
         const { voteId } = request.params;
-        console.log(typeof voteId);
+
         const vote = await Vote.findOne({ client_id: parseInt(voteId) });
         const user = request.user;
 
-        console.log(vote.votes);
 
         if (!vote) {
             return response.status(422).json({ error: 'Vote you are looking for doesnt exist' });
@@ -152,22 +151,28 @@ router.post('/make-vote', middlewares.executive, async (request, response) => {
 
         // =====================================
         // the proper way to find nested object values in mongo
+        /*
         const properVoteInUser = await User.find({ "votes.vote_id": vote._id });
 
+        console.log(properVoteInUser);
+
         if (properVoteInUser.length >= 1) {
-            return response.status(422).json({ error: 'Properrr. You already voted for this vote' });
+            return response.status(422).json({ error: 'You already voted for this vote, vote in user' });
         }
+        */
 
         const properVoterInVote = await Vote.find({ "voters.user_id": user._id });
 
-        if (properVoterInVote >= 1) {
-            return response.status(422).json({ error: 'Properrr. User already exists in voters' });
+        console.log(properVoterInVote);
+
+        if (properVoterInVote.length >= 1) {
+            return response.status(422).json({ error: 'You already voted for this vote, voter in vote' });
         }
         // ====================================
 
         // not the best practice, because dont know how to find the ObjectId in document
         const voteInUser = user.votes.find((item, index) => {
-            if (item.vote_id.toString() === vote._id.toString()) {
+            if (item && item.vote_id.toString() === vote._id.toString()) {
                 return item;
             }
         });
@@ -179,7 +184,7 @@ router.post('/make-vote', middlewares.executive, async (request, response) => {
 
         // not the best practice, because dont know how to find the ObjectId in document
         const voterInVote = vote.voters.find((item, index) => {
-            if (item.user_id.toString() === user._id.toString()) {
+            if (item && item.user_id.toString() === user._id.toString()) {
                 return item;
             }
         });

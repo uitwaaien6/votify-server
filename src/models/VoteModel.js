@@ -13,6 +13,8 @@ const voterSchema = mongoose.Schema({
     }
 });
 
+
+
 const voteSchema = mongoose.Schema({
     user_id: {
         type: mongoose.Schema.Types.ObjectId,
