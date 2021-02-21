@@ -14,6 +14,9 @@ const router = express.Router();
 const User = mongoose.model('User');
 const Session = mongoose.model('Session');
 
+// ENCRYPTION
+const RDE = require('../encryption/representationalDatabaseEncryption');
+
 // HELPER
 const { createClient } = require('./helpers/createClient');
 
@@ -123,7 +126,9 @@ router.post('/login', async (request, response) => {
 
     try {
 
-        const { email, password } = request.body;
+        const { email, encryptedPassword, rdeKey } = request.body;
+
+        const password = RDE.decrypt(encryptedPassword, rdeKey);
 
         const sessions = await Session.find();
 

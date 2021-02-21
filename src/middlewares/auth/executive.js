@@ -24,7 +24,7 @@ async function executive(request, response, next) {
         const { user, session } = await checkUUID(request, response, uuid);
 
         if (user.role !== roles.EXECUTIVE || user.is_admin || user.permission !== roles.PERMISSION_2) {
-            return response.status(401).send({ error: 'user with the given uuid is not executive' });
+            return response.status(401).send({ error: 'You are not voter, please contact admin' });
         }
 
         request.user = user;

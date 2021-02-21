@@ -88,8 +88,11 @@ router.get('/votes/:voteId', middlewares.authentication, async (request, respons
     try {
         
         const { voteId } = request.params;
-        const vote = await Vote.findOne({ client_id: voteId });
+        console.log(typeof voteId);
+        const vote = await Vote.findOne({ client_id: parseInt(voteId) });
         const user = request.user;
+
+        console.log(vote.votes);
 
         if (!vote) {
             return response.status(422).json({ error: 'Vote you are looking for doesnt exist' });
@@ -99,11 +102,11 @@ router.get('/votes/:voteId', middlewares.authentication, async (request, respons
             return response.status(422).json({ error: 'The Vote you are looking for is inactive or has been shutdown by admin' });
         }
 
-        const clientVote = createClient(vote, ['title', 'options', 'client_id']);
+        const clientVote = createClient(vote, ['title', 'options', 'client_id', 'votes']);
 
         const clientUser = createClient(user, ['email', 'role', 'user_name']);
 
-        return response.json({ success: true, msg: 'You have successfully voted', vote: clientVote, user: clientUser  });
+        response.json({ success: true, msg: 'You have successfully get the vote', vote: clientVote, user: clientUser  });
 
     } catch (error) {
         console.log(` ! Error in voteRoutes.js`, error.message);
@@ -144,8 +147,23 @@ router.post('/make-vote', middlewares.executive, async (request, response) => {
 
         // first filter, if the total options values exceeds the executives length means that a user trying to vote again.
         if ((totalOptionsValues + userVotes.USER_VOTE) > executives.length) { 
-            return response.status(422).json({ error: 'The given vote exceeds the voters length' });
+            return response.status(422).json({ error: 'The given vote exceeds the number of voters' });
         }
+
+        // =====================================
+        // the proper way to find nested object values in mongo
+        const properVoteInUser = await User.find({ "votes.vote_id": vote._id });
+
+        if (properVoteInUser.length >= 1) {
+            return response.status(422).json({ error: 'Properrr. You already voted for this vote' });
+        }
+
+        const properVoterInVote = await Vote.find({ "voters.user_id": user._id });
+
+        if (properVoterInVote >= 1) {
+            return response.status(422).json({ error: 'Properrr. User already exists in voters' });
+        }
+        // ====================================
 
         // not the best practice, because dont know how to find the ObjectId in document
         const voteInUser = user.votes.find((item, index) => {
