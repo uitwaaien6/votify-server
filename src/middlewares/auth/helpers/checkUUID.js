@@ -17,8 +17,8 @@ function checkUUID(request, response, uuid) {
         
             const user = await User.findOne({ uuid });
         
-            if (!user) {
-                return response.status(422).json({ error: 'person with the given uuid doesnt exist' });
+            if (!user || !user.active) {
+                return response.status(422).json({ error: 'User is either doesnt exist or not active' });
             }
         
             const session = await  Session.findOne({ uuid });

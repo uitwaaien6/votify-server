@@ -4,7 +4,7 @@
 
 function makeFirstUpper(word) {
     if (word) {
-        return word[0].toUpperCase() + word.substr(1, word.length);
+        return word[0].toUpperCase() + word.substr(1, word.length).toLowerCase();
     }
 
 }
@@ -25,7 +25,7 @@ function createClient(obj, props) {
                 const propArr = propItem.split('_');
                 const clientProp = (propArr[0] + (propArr[1] ? makeFirstUpper(propArr[1]) : ''));
 
-                if (objItem[propItem]) {
+                if (objItem[propItem] !== null && objItem[propItem] !== undefined) {
 
                     clientObjForArr[clientProp] = objItem[propItem];
                 }
@@ -35,20 +35,23 @@ function createClient(obj, props) {
 
         });
 
-        return clientArr;
+        return [...clientArr];
     }
 
 
     const clientObj = {};
     props.forEach((item, index) => {
+
         const propArr = item.split('_');
+
         const clientProp = (propArr[0] + (propArr[1] ? makeFirstUpper(propArr[1]) : ''));
-        if (obj[item]) {
+
+        if (obj[item] !== null && obj[item] !== undefined) {
             clientObj[clientProp] = obj[item];
         }
     });
 
-    return clientObj;
+    return { ...clientObj };
 }
 
 module.exports = {

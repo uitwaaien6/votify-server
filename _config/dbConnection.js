@@ -14,5 +14,5 @@ mongoose.connect(mongoURL, {
 });
 
 mongoose.connection.on('connected', () => console.log(`Connected to MongoDB Instance`));
-mongoose.connection.on('error', () => console.log(`Error Connectiong to MongoDB Instance`));
+mongoose.connection.on('error', () => console.log(`Error Connecting to MongoDB Instance`));
 

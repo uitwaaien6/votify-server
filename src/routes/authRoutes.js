@@ -360,6 +360,121 @@ router.post('/email-reset/send-link', async (request, response) => {
 // #route:  POST /register-user
 // #desc:   User sends a request to admin to be registered
 // #access: Private
+router.get('/users', middlewares.admin, async (request, response) => {
+
+    try {
+        const user = request.user;
+        const allUsers = await User.find();
+
+        // all other users except this admin user
+        const users = allUsers.filter((item, index) => {
+            if (item._id.toString() !== user._id.toString()) return item;
+        });
+
+        const wantedProps = ['email', 'active', 'role', 'user_name', 'email_verified'];
+        
+
+        const clientUsers = createClient(users, wantedProps);
+
+        return response.json({ success: true, msg: 'Successfully get the users', users: clientUsers });
+
+    } catch (error) {
+        console.log(error.message);
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
+// #route:  GET /user/:userName
+// #desc:   Admin get a specific user
+// #access: Private
+router.get('/users/:userName', middlewares.admin, async (request, response) => {
+
+    try {
+        const { userName } = request.params;
+        const user = await User.findOne({ user_name: userName });
+
+        if (!user) {
+            return response.status(422).json({ error: 'Cannot find the user with this user name' });
+        }
+
+        const wantedProps = ['email', 'user_name', 'active', 'role'];
+
+        const clientUser = createClient(user, wantedProps);
+        console.log(clientUser);
+
+        return response.json({ success: true, msg: 'Successfully get the user', wantedUser: clientUser });
+
+    } catch (error) {
+        console.log(error.message);
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
+// #route:  GET /user/:userName
+// #desc:   Admin get a specific user
+// #access: Private
+router.post('/save-user', middlewares.admin, async (request, response) => {
+
+    try {
+        const { userName, role, active } = request.body;
+
+        if (!userName || !role || !active) {
+            return response.status(422).json({ error: 'user name is missing' });
+        }
+
+        const user = await User.findOne({ user_name: userName });
+
+        if (!user) {
+            return response.status(422).json({ error: 'Cannot find the user with this user name' });
+        }
+
+        const sameActiveCheck = user.active ? 'Yes' : 'No';
+
+        if (user.role === role && sameActiveCheck === active) {
+            return response.status(422).json({ error: 'User credentials is already same with your options' });
+        }
+
+        const staticRoles = [roles.ADMIN, roles.EXECUTIVE, roles.USER];
+        if (!staticRoles.includes(role)) {
+            return response.status(422).json({ error: 'You must provide a valid role for user' });
+        }
+
+        let activeVal = false;
+
+        if (active === 'Yes') {
+            activeVal = true;
+        } else if (active === 'No') {
+            activeVal = false;
+        } else {
+            return response.status(422).json({ error: 'You must provide a valid active value for user' });
+        }
+
+        if (role === roles.ADMIN) {
+            await User.updateOne({ _id: user._id }, { $set: { role, active: activeVal, is_admin: true, permission: roles.PERMISSION_1 } });
+        } else {
+            await User.updateOne({ _id: user._id }, { $set: { role, active: activeVal } });
+        }
+
+        const wantedUser = await User.findOne({ _id: user._id });
+
+        const wantedProps = ['email', 'role', 'active', 'user_name'];
+        const clientUser = createClient(wantedUser, wantedProps);
+
+        return response.json({ success: true, msg: 'Successfully get the user', wantedUser: clientUser });
+
+    } catch (error) {
+        console.log(error.message);
+        return response.status(422).send({ error: error.message });
+    }
+
+});
+
+
+// #route:  POST /register-user
+// #desc:   User sends a request to admin to be registered
+// #access: Private
 router.post('/register-user', middlewares.admin, async (request, response) => {
 
     try {
@@ -432,7 +547,7 @@ router.post('/register-executive', middlewares.admin, async (request, response) 
             return response.status(422).send({ error: 'Email is not valid' });
         }
 
-        if (userName.includes(' ')) {
+        if (userName.includes(' ') || userName.length > 30) {
             return response.status(422).json({ error: 'Please enter a valid username' });
         }
 
@@ -458,7 +573,7 @@ router.post('/register-executive', middlewares.admin, async (request, response) 
             from: 'no-reply@votify.com',
             to: email,
             subject: 'VOTIFY EMAIL VERIFICATION LINK',
-            text: `UserName: ${user.user_name}`,
+            text: `Your credentials, User name: ${userName}, email: ${email}, password: ${temporaryPassword}`,
             html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
         }
         // TODO Remove localhost with the real domain address.
