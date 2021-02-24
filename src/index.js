@@ -29,7 +29,7 @@ require('./models/UserModel');
 require('./models/SessionModel');
 require('./models/VoteModel');
 
-// TIMERS
+// SUPERVISIONS
 require('./supervisions/checkSessionsLifetime');
 require('./supervisions/checkActiveUsers');
 require('./supervisions/checkIllegalVotes');
@@ -75,7 +75,7 @@ app.use(
     })
 );
 
-// ROUTES
+// ROUTES MIDDLEWARE
 app.use(authRoutes);
 app.use(voteRoutes);
 
