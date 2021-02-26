@@ -183,6 +183,7 @@ router.post('/login', async (request, response) => {
         }
 
         // create a new session uuid
+        
         let sessionUUID = uuid.v4();
 
         // aviod uuid overlapping but it nearly impossible though
@@ -452,9 +453,23 @@ router.post('/save-user', middlewares.admin, async (request, response) => {
         }
 
         if (role === roles.ADMIN) {
-            await User.updateOne({ _id: user._id }, { $set: { role, active: activeVal, is_admin: true, permission: roles.PERMISSION_1 } });
+            await User.updateOne(
+                { _id: user._id }, 
+                { $set: { role, active: activeVal, is_admin: true, permission: roles.PERMISSION_1 } }
+            );
         } else {
-            await User.updateOne({ _id: user._id }, { $set: { role, active: activeVal } });
+
+            let properPermission = 0;
+
+            if (role === roles.USER) properPermission = roles.PERMISSION_3;
+            else if (role === roles.EXECUTIVE) properPermission = roles.PERMISSION_2;
+            else return response.status(422).json({ error: 'You must provide a valid role value for user' });
+
+            await User.updateOne(
+                { _id: user._id }, 
+                { $set: { role, active: activeVal, is_admin: false, permission: properPermission } }
+            );
+
         }
 
         const wantedUser = await User.findOne({ _id: user._id });
@@ -862,7 +877,3 @@ router.post('/api/auth/verification/email-reset/reset-email/:userId/:emailResetT
 
 
 module.exports = router;
-
-
-// url de birden fazla uuid mimarisi each uuid baska bir objeyi temsil ediyo
-
