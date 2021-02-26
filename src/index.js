@@ -14,7 +14,7 @@ const app = express();
 
 // CONFIG > ENVIRONMENTS
 const {
-    PORT,
+    PORT = 3000,
     NODE_ENV,
     SESSION_SECRET,
     SESSION_LIFETIME,
@@ -35,6 +35,7 @@ require('./supervisions/checkActiveUsers');
 require('./supervisions/checkIllegalVotes');
 
 // ROUTES
+const mainRoutes = require('./routes/mainRoutes');
 const authRoutes = require('./routes/authRoutes');
 const voteRoutes = require('./routes/voteRoutes');
 
@@ -75,6 +76,7 @@ app.use(
 );
 
 // ROUTES MIDDLEWARE
+app.use(mainRoutes);
 app.use(authRoutes);
 app.use(voteRoutes);
 
@@ -86,11 +88,11 @@ app.listen(PORT, (err) => {
 
     console.log(
         `
-            ########################################
+            #########################################
 
-                    Listening on port ${PORT}
+                    Listening on port ${PORT}        
 
-            ########################################
+            #########################################
         `
     );
 });
