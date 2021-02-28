@@ -14,7 +14,7 @@ const app = express();
 
 // CONFIG > ENVIRONMENTS
 const {
-    PORT = 3000,
+    PORT,
     NODE_ENV,
     SESSION_SECRET,
     SESSION_LIFETIME,
@@ -51,15 +51,15 @@ app.use(express.static(path.join(__dirname, '../public', 'email-verified')));
 
 app.use(
     cors({
-        credentials: true
+        credentials: true,
+        'Access-Control-Allow-Credentials': true
     })
 );
-
-app.use(cookieParser());
 
 // APP CONFIG
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // SESSION CONFIG
 app.use(

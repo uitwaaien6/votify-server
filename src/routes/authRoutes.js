@@ -366,6 +366,7 @@ router.get('/users', middlewares.admin, async (request, response) => {
     try {
         const user = request.user;
         const allUsers = await User.find();
+        console.log(allUsers);
 
         // all other users except this admin user
         const users = allUsers.filter((item, index) => {
