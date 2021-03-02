@@ -82,17 +82,6 @@ app.use(voteRoutes);
 
 // LISTEN
 app.listen(PORT, (err) => {
-    if (err) {
-        return process.exit(1);
-    }
-
-    console.log(
-        `
-            #########################################
-
-                    Listening on port ${PORT}        
-
-            #########################################
-        `
-    );
+    if (err) return process.exit(1);
+    console.log(`Listening on port ${PORT}`);
 });

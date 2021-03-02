@@ -3,36 +3,21 @@
 // NODE MODULES
 const express = require('express');
 const mongoose = require('mongoose');
-const srs = require('secure-random-string');
-const uuid = require('uuid');
 
 // ROUTER
 const router = express.Router();
 
 // MODELS
 const User = mongoose.model('User');
-const Session = mongoose.model('Session');
 const Vote = mongoose.model('Vote');
 
 // MIDDLEWARES
 const middlewares = require('../middlewares');
 
-// VALIDATORS
-const validator = require('../validators/authValidators'); // general validator
-
-// MAILERS
-const { sendMail } = require('../mailers/sendMail');
-
 // ROUTES > HELPERS
 const { configVoteOptions } = require('./helpers/configVoteOptions');
 const { calcTotalOptionsValues } = require('./helpers/calcTotalOptionsValues');
 const { createClient } = require('./helpers/createClient');
-
-// TIMERS
-//const { checkIllegalVotes } = require('../timers/checkIllegalVotes'); TODO, exporting and also calling function overlapping setInterval with every make-vote request
-
-// CONFIG > EXPIRATION DATES
-const times = require('../../_config/times');
 
 // CONFIG > ROLES
 const roles = require('../../_config/roles');
@@ -41,12 +26,8 @@ const roles = require('../../_config/roles');
 const userVotes = require('../../_config/userVotes');
 
 
-// ========= PUBLIC ROUTES =============
-
-
 
 // ========= PRIVATE ROUTES =============
-
 
 // #route:  GET /votes
 // #desc:   User get votes
@@ -281,17 +262,14 @@ router.post('/delete-vote', middlewares.admin, async (request, response) => {
     try {
         
         const { voteClientId } = request.body;
-        const user = request.user;
 
         if (!voteClientId) {
-
             return response.status(422).json({ error: 'vote id is not provided' });
         }
 
         const vote = await Vote.findOne({ client_id: voteClientId });
 
         if (!vote) {
-            console.log('voted yok')
             return response.status(422).json({ error: 'Vote with the given id is not found' });
         }
 
@@ -304,8 +282,7 @@ router.post('/delete-vote', middlewares.admin, async (request, response) => {
         return response.json({ success: true, msg: 'Vote has been deleted', votes: clientVotes });
 
     } catch (error) {
-        console.log(` ! Error in /delete-vote`, error.message);
-        return response.status(422).json({ error: error.message });
+        return response.status(422).json({ error: 'Something went wrong while deleting vote' });
     }
 });
 

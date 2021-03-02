@@ -5,7 +5,6 @@ const chalk = require('chalk');
 
 // MODELS
 const User = mongoose.model('User');
-const Session = mongoose.model('Session');
 const Vote = mongoose.model('Vote');
 
 // ROUTES > HELPERS
@@ -13,7 +12,6 @@ const { calcTotalOptionsValues } = require('../routes/helpers/calcTotalOptionsVa
 
 // CONFIG > TIMES
 const times = require('../../_config/times');
-const THREE_HOURS = times.ONE_HOUR * 3;
 
 // CONFIG > ROLES
 const roles = require('../../_config/roles');
@@ -26,7 +24,7 @@ async function checkIllegalVotes() {
         // check all the current votes to find if there is any extra vote in the votes
         const executives = await User.find({ role: roles.EXECUTIVE, is_admin: false, permission: roles.PERMISSION_2 }); // aka voters
 
-        const dbVotes = await Vote.find();
+        const dbVotes = await Vote.find({});
 
         if (!dbVotes || !executives) {
             return console.log(chalk.red('No Database Votes or Executives found'));
@@ -63,8 +61,8 @@ async function checkIllegalVotes() {
 
 }
 
+// Check for inital
 checkIllegalVotes();
 
-setInterval(() => {
-    checkIllegalVotes();
-}, times.ONE_HOUR);
+// Check if there are any illegal votes in every half an hour.
+setInterval(() => checkIllegalVotes(), times.ONE_MINUTE * 30);

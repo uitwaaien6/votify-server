@@ -28,7 +28,7 @@ async function sendMail({ from, to, subject, text, html }) {
         });
 
     } catch (error) {
-        console.log(` ! Error in sendEmail.js`, error.message);
+        console.log(` ! Error in sendMail.js`, error.message);
     }
     
 }
