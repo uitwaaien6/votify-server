@@ -154,15 +154,11 @@ router.post('/make-vote', middlewares.executive, async (request, response) => {
         
         const properVoteInUser = await User.find({ "votes.vote_id": vote._id });
 
-        console.log(properVoteInUser);
-
         if (properVoteInUser.length >= 1) {
             return response.status(422).json({ error: 'You already voted for this vote, vote in user' });
         }
 
         const properVoterInVote = await Vote.find({ "voters.user_id": user._id });
-
-        console.log(properVoterInVote);
 
         if (properVoterInVote.length >= 1) {
             return response.status(422).json({ error: 'You already voted for this vote, voter in vote' });
