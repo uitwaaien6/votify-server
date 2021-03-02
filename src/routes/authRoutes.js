@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const srs = require('secure-random-string');
 const uuid = require('uuid');
 const path = require('path');
+const ROE = require('ro-encrypt');
 
 // ROUTER
 const router = express.Router();
@@ -13,9 +14,6 @@ const router = express.Router();
 // MODELS
 const User = mongoose.model('User');
 const Session = mongoose.model('Session');
-
-// ENCRYPTION
-const RDE = require('../encryption/representationalDatabaseEncryption');
 
 // HELPER
 const { createClient } = require('./helpers/createClient');
@@ -125,7 +123,7 @@ router.post('/login', async (request, response) => {
 
         const { email, encryptedPassword, rdeKey } = request.body;
 
-        const password = RDE.decrypt(encryptedPassword, rdeKey);
+        const password = ROE.decrypt(encryptedPassword, rdeKey);
 
         const sessions = await Session.find();
 
