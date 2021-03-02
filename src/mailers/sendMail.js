@@ -4,24 +4,27 @@ const nodemailer = require('nodemailer');
 // CONFIG > ENVIRONMENT
 const { EMAIL_PASSWORD } = require('../../_config/environment');
 
-async function sendMail(package) {
+async function sendMail({ from, to, subject, text, html }) {
 
     try {
 
         let transporter = nodemailer.createTransport({
-            service: 'gmail',
+            direct: true,
+            host: 'smtp.yandex.ru',
+            port: 465,
+            secure: true,
             auth: {
-                user: 'ruzgarata6@gmail.com', // generated ethereal user
+                user: 'uitwaaien6@yandex.com', // generated ethereal user
                 pass: EMAIL_PASSWORD, // generated ethereal password
             },
         });
 
         await transporter.sendMail({
-            from: package.from, // sender address
-            to: package.to, // list of receivers
-            subject: package.subject, // Subject line
-            text: package.text, // plain text body
-            html: package.html, // html body
+            from, // sender address
+            to, // list of receivers
+            subject, // Subject line
+            text: text ? text : '', // plain text body
+            html: html ? html : undefined, // html body
         });
 
     } catch (error) {

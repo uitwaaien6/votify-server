@@ -52,7 +52,7 @@ app.use(express.static(path.join(__dirname, '../public', 'email-verified')));
 app.use(
     cors({
         credentials: true,
-        'Access-Control-Allow-Credentials': true
+        origin: 'http://localhost:3000'  //  http://localhost:3000  ||  http://votify.cf
     })
 );
 

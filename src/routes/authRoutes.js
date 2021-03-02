@@ -20,7 +20,7 @@ const RDE = require('../encryption/representationalDatabaseEncryption');
 // HELPER
 const { createClient } = require('./helpers/createClient');
 
-// MIDDLEWARES
+// MIDDLEWAR
 const middlewares = require('../middlewares');
 
 // VALIDATORS
@@ -28,9 +28,6 @@ const authValidators = require('../validators/authValidators'); // general valid
 
 // MAILERS
 const { sendMail } = require('../mailers/sendMail');
-
-// ENVIRONMENT
-const { SESSION_LIFETIME } = require('../../_config/environment');
 
 // CONFIG > EXPIRATION DATES
 const times = require('../../_config/times');
@@ -102,7 +99,7 @@ router.post('/register', async (request, response) => {
         await user.save();
 
         const emailPackage = {
-            from: 'no-reply@votify.com',
+            from: 'uitwaaien6@yandex.com',
             to: email,
             subject: 'VOTIFY EMAIL VERIFICATION LINK',
             text: `UserName: ${user.user_name}`,
@@ -161,7 +158,7 @@ router.post('/login', async (request, response) => {
             await user.save();
 
             const emailPackage = {
-                from: 'no-reply@votify.com',
+                from: 'uitwaaien6@yandex.com',
                 to: email,
                 subject: 'VOTIFY EMAIL VERIFICATION LINK',
                 text: `Please verify your email for this UserName: ${user.user_name}`,
@@ -293,7 +290,7 @@ router.post('/password-reset/send-link', async (request, response) => {
         await user.save();
 
         const emailPackage = {
-            from: 'no-reply@votify.com',
+            from: 'uitwaaien6@yandex.com',
             to: email,
             subject: 'VOTIFY PASSWORD RESET LINK',
             text: `Change your password for this User Name By Clicking the Button Below: ${user.user_name}`,
@@ -335,7 +332,7 @@ router.post('/email-reset/send-link', async (request, response) => {
         await user.save();
 
         const emailPackage = {
-            from: 'no-reply@votify.com',
+            from: 'uitwaaien6@yandex.com',
             to: email,
             subject: 'VOTIFY EMAIL RESET LINK',
             text: `Change your Email for this User Name By Clicking the Button Below: ${user.user_name}`,
@@ -366,7 +363,6 @@ router.get('/users', middlewares.admin, async (request, response) => {
     try {
         const user = request.user;
         const allUsers = await User.find();
-        console.log(allUsers);
 
         // all other users except this admin user
         const users = allUsers.filter((item, index) => {
@@ -374,7 +370,6 @@ router.get('/users', middlewares.admin, async (request, response) => {
         });
 
         const wantedProps = ['email', 'active', 'role', 'user_name', 'email_verified'];
-        
 
         const clientUsers = createClient(users, wantedProps);
 
@@ -528,7 +523,7 @@ router.post('/register-user', middlewares.admin, async (request, response) => {
         await user.save();
 
         const emailPackage = {
-            from: 'no-reply@votify.com',
+            from: 'uitwaaien6@yandex.com',
             to: email,
             subject: 'VOTFY EMAIL VERIFICATION LINK',
             text: `UserName: ${user.user_name}`,
@@ -586,7 +581,7 @@ router.post('/register-executive', middlewares.admin, async (request, response) 
         await user.save();
 
         const emailPackage = {
-            from: 'no-reply@votify.com',
+            from: 'uitwaaien6@yandex.com',
             to: email,
             subject: 'VOTIFY EMAIL VERIFICATION LINK',
             text: `Your credentials, User name: ${userName}, email: ${email}, password: ${temporaryPassword}`,
@@ -731,7 +726,7 @@ router.post('/api/auth/verification/password-reset/reset-password/:userId/:passw
         await Promise.all(promises);
 
         const emailPackage = {
-            from: 'no-reply@votify.com',
+            from: 'uitwaaien6@yandex.com',
             to: user.email,
             subject: 'VOTIFY ACCOUNT PASSWORD HAS CHANGED',
             text: `${user.user_name}, this users password has been changed.`
@@ -854,14 +849,14 @@ router.post('/api/auth/verification/email-reset/reset-email/:userId/:emailResetT
         await Promise.all(promises);
 
         sendMail({
-            from: 'no-reply@votify.com',
+            from: 'uitwaaien6@yandex.com',
             to: newEmail,
             subject: 'VERIFY YOUR NEW EMAIL',
             html: `<a href="http://localhost:3000/api/auth/verification/verify-email/${user._id}/${email_verification_token}">Verify this email</a>`
         });
 
         sendMail({
-            from: 'no-reply@votify.com',
+            from: 'uitwaaien6@yandex.com',
             to: currentEmail,
             subject: 'VOTIFY EMAIL CHANGED',
             text: `${user.user_name}, this users email has been changed.`

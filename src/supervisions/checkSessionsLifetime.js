@@ -5,6 +5,7 @@ const chalk = require('chalk');
 
 // MODELS
 const Session = mongoose.model('Session');
+const User = mongoose.model('User');
 
 // CONFIG > TIMES
 const times = require('../../_config/times');
@@ -14,7 +15,7 @@ async function checkSessionsLifetime(ttl) {
 
     try {
         
-    const sessions = await Session.find();
+    const sessions = await Session.find({});
 
     if (!sessions) {
         return console.log(chalk.red('No Sessions found or Couldnt connect to database'))
@@ -30,15 +31,17 @@ async function checkSessionsLifetime(ttl) {
 
         if (isSessionEnded) {
             endedSessions.push(session);
+
         }
 
     });
 
     endedSessions.forEach((session, index) => {
+        sessionDeletions.push(User.updateOne({ uuid: session.uuid }, { $set: { uuid: null } }));
         sessionDeletions.push(Session.deleteOne({ _id: session._id }));
     });
 
-    await Promise.all(sessionDeletions);
+    await Promise.all(sessionDeletions); // delete collected promises with Promise.all(), gain huge efficiency
 
     } catch (error) {
         console.log(` Error in checkSessionsLifetime.js`, error.message);
@@ -47,7 +50,7 @@ async function checkSessionsLifetime(ttl) {
 }
 
 
-// Argument is the additional milliseconds which will be added to the createdAt property
+// Argument is the additional milliseconds which will be added to the updatedAt property
 checkSessionsLifetime(THREE_HOURS);
 
 // Checks per minute
