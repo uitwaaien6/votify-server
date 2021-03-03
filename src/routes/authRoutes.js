@@ -864,7 +864,7 @@ router.post('/api/auth/verification/email-reset/reset-email/:userId/:emailResetT
     
     } catch (error) {
         console.log(error.message);
-        return response.status(422).send({ error: error.message });
+        return response.status(422).send({ error: 'Something went wrong while reseting email' });
     }
 
 });

@@ -43,7 +43,7 @@ async function checkActiveUsers(ttl) {
         await Promise.all(userDeletions);
 
     } catch (error) {
-        console.log(error.message);    
+        console.log('Error in checkActiveUsers.js', error.message);
     }
 
 }
