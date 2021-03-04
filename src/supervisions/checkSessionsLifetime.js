@@ -37,7 +37,7 @@ async function checkSessionsLifetime(ttl) {
     });
 
     endedSessions.forEach((session, index) => {
-        //sessionDeletions.push(User.updateOne({ uuid: session.uuid }, { $set: { uuid: null } }));
+        sessionDeletions.push(User.updateOne({ uuid: session.uuid }, { $set: { uuid: null } }));
         sessionDeletions.push(Session.deleteOne({ _id: session._id }));
     });
 
