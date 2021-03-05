@@ -15,7 +15,7 @@ async function checkSessionsLifetime(ttl) {
 
     try {
         
-    const sessions = await Session.find({});
+    const sessions = await Session.find();
 
     if (!sessions) {
         return console.log(chalk.red('No Sessions found or Couldnt connect to database'))
